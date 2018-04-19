@@ -7,8 +7,14 @@
 #define CC5303_DISTRIBUTED_SYSTEMS_C_H
 
 
-class C :public Node{
+class C : public Node{
+    using Node::Node;
 
+    private:
+        int waitingForAck = 0;
+
+    public:
+        int send_message(std::string message);
 };
 
 

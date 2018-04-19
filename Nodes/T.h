@@ -8,7 +8,7 @@
 
 
 class T : public Node {
-
+    using Node::Node;
 };
 
 

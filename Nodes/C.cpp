@@ -3,3 +3,8 @@
 //
 
 #include "C.h"
+
+int C::send_message(std::string message) {
+
+    return 0;
+}

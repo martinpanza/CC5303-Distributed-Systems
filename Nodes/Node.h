@@ -1,0 +1,14 @@
+//
+// Created by marti on 19-04-2018.
+//
+
+#ifndef CC5303_DISTRIBUTED_SYSTEMS_NODE_H
+#define CC5303_DISTRIBUTED_SYSTEMS_NODE_H
+
+
+class Node {
+
+};
+
+
+#endif //CC5303_DISTRIBUTED_SYSTEMS_NODE_H

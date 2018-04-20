@@ -18,6 +18,14 @@ Node::Node(std::string ip, int port, std::string name) {
     this->table = *new Table();
 }
 
+int establishConnection(int ip, int port) {
+
+}
+
+int receivePacket(Packet p);
+int sendPacket(Packet p);
+void listening();
+
 void Node::run() {
     std::cout << "ready!";
 }

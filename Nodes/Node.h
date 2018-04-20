@@ -8,7 +8,6 @@
 #ifndef CC5303_DISTRIBUTED_SYSTEMS_NODE_H
 #define CC5303_DISTRIBUTED_SYSTEMS_NODE_H
 
-
 class Node {
     private:
         Table table;
@@ -16,11 +15,13 @@ class Node {
         int port;
         std::string name;
 
+
     public:
         explicit Node(std::string ip, int port, std::string name);
-        int establish_connection(int ip, int port);
-        int receive_packet(Packet);
-        int send_packet(Packet);
+        int establishConnection(int ip, int port);
+        int receivePacket(Packet p);
+        void receiveTablePacket();
+        int sendPacket(Packet p);
         void listening();
         void run();
 };

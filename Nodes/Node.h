@@ -9,11 +9,12 @@
 #define CC5303_DISTRIBUTED_SYSTEMS_NODE_H
 
 class Node {
-    private:
+    protected:
         Table table;
         std::string ip;
         int port;
         std::string name;
+        std::vector<std::pair<std::string, std::pair<int, int>>> connections;
 
 
     public:

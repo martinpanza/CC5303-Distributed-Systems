@@ -1,5 +1,4 @@
 #include <iostream>
-#include <vector>
 #include "./Nodes/Node.h"
 #include "./Nodes/C.h"
 #include "./Nodes/T.h"

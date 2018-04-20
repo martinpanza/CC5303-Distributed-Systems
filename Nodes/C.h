@@ -14,6 +14,7 @@ class C : public Node{
         int waitingForAck = 0;
 
     public:
+        void add_connection(std::string name);
         int send_message(std::string message);
 };
 

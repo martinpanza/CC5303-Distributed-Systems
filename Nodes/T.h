@@ -9,6 +9,9 @@
 
 class T : public Node {
     using Node::Node;
+
+    public:
+        void add_connection(std::string name);
 };
 
 

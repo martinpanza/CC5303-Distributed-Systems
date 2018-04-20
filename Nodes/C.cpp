@@ -10,5 +10,5 @@ int C::send_message(std::string message) {
 }
 
 void C::add_connection(std::string name) {
-    this->connections.push_back(new std::vector(new std::pair(1, 512)));
+    this->connections.push_back(std::pair<std::string, std::pair<int, int>>(name , std::pair<int, int>(1,512)));
 }

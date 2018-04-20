@@ -28,5 +28,7 @@ int random_mtu() {
 void T::add_connection(std::string name) {
     int delay = random_int(2, 10);
     int MTU = random_mtu();
-    this->connections.push_back(new std::vector(new std::pair(delay, MTU)));
+    std::pair<int, int> p = std::pair<int, int>(delay,MTU);
+    std::pair<std::string, std::pair<int, int>> P = std::pair<std::string, std::pair<int, int>>(name, p);
+    this->connections.push_back(P);
 }

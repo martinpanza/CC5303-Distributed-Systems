@@ -16,5 +16,8 @@ void Table::add_direct_router(std::string name) {
 }
 
 void Table::add_reachable_client(std::string name, std::vector<std::string> ways) {
-    this->reachable_clientes.push_back(new std::vector(new std::pair(name, ways)));
+    std::pair<std::string, std::vector<std::string>> p = std::pair<std::string, std::vector<std::string>>(name, ways);
+    std::vector<std::pair<std::string, std::vector<std::string>>> v;
+    v.push_back(p);
+    this->reachable_clientes.push_back(v);
 }

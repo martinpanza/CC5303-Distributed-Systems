@@ -3,3 +3,20 @@
 //
 
 #include "Table.h"
+#include <iostream>
+#include <vector>
+#include <stdlib.h>
+
+void Table::add_direct_client(std::string name) {
+    this->direct_clients.push_back(name);
+}
+
+void Table::add_direct_router(std::string name, std::string connection_type) {
+    if (connection_type == "tt"){
+        this->direct_routers.push_back(new std::vector(new std::pair(name, new std::pair(2,3))));
+    } else if (connection_type == "ct"){
+
+    } else{
+        std::cout << "wrong connection_type";
+    }
+}

@@ -4,6 +4,7 @@
 #include "Table.h"
 #include "../Packets/Packet.h"
 #include <string>
+#include <deque>
 
 #ifndef CC5303_DISTRIBUTED_SYSTEMS_NODE_H
 #define CC5303_DISTRIBUTED_SYSTEMS_NODE_H
@@ -15,6 +16,8 @@ class Node {
         int port;
         std::string name;
         std::vector<std::pair<std::string, std::pair<int, int>>> connections;
+        std::deque<Packet> message_queue;
+        int connectionIndex = 0;
 
 
     public:
@@ -22,9 +25,10 @@ class Node {
         int establishConnection(int ip, int port);
         int receivePacket(Packet p);
         void receiveTablePacket();
-        int sendPacket(Packet p);
         void listening();
         void run();
+        std::pair<Packet, Packet> fragment(Packet packet, int MTU);
+        void send_next_packet();
 };
 
 

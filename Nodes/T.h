@@ -1,5 +1,5 @@
 //
-// Created by marti on 19-04-2018.
+// Created by marti y alonSort on 19-04-2018.
 //
 #include "Node.h"
 
@@ -12,6 +12,7 @@ class T : public Node {
 
     public:
         void add_connection(std::string name);
+
 };
 
 

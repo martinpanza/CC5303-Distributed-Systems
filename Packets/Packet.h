@@ -10,9 +10,9 @@
 
 class Packet {
 
-private:
-    char* ;
-
+public:
+    int header_length;
+    int total_length;
 };
 
 

@@ -22,6 +22,10 @@ int random_mtu() {
     return arrayNum[RandIndex];
 }
 
+void T::run() {
+    return;
+}
+
 void T::add_connection(std::string ip, std::string port) {
     int delay = random_int(2, 10);
     int MTU = random_mtu();

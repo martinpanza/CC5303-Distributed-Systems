@@ -4,6 +4,14 @@
 
 #include "C.h"
 
+void C::run() {
+    std::string s;
+    while(std::getline(std::cin, s)) {
+        std::cout << s << std::endl;
+    }
+    return;
+}
+
 int C::send_message(std::string message) {
 
     return 0;

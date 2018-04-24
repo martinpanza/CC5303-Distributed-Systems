@@ -11,6 +11,7 @@ class T : public Node {
     using Node::Node;
 
     public:
+        void run() override;
         void add_connection(std::string ip, std::string port);
         int send_message(std::string message);
 

@@ -2,7 +2,7 @@
 // Created by marti on 19-04-2018.
 //
 #include "Node.h"
-
+#include <iostream>
 #ifndef CC5303_DISTRIBUTED_SYSTEMS_C_H
 #define CC5303_DISTRIBUTED_SYSTEMS_C_H
 
@@ -14,6 +14,7 @@ class C : public Node{
         int waitingForAck = 0;
 
     public:
+        void run() override;
         void add_connection(std::string ip, std::string port);
         int send_message(std::string message);
 };

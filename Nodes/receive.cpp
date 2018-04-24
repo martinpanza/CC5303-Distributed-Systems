@@ -13,11 +13,12 @@
 #include <string.h>
 
 void receive(int sd){
-    std::cout << "waiting for connection" << std::endl;
+    std::cout << "ready to receive messages" << std::endl;
     char *hello="Hello from server";
     char buffer[1024] = {0};
+    int valread;
 
-    int valread = read(sd, buffer, 1024);
+    valread = read(sd, buffer, 1024);
     printf("%s\n", buffer);
     send(sd, hello, strlen(hello), 0);
     printf("Hello message sent\n");

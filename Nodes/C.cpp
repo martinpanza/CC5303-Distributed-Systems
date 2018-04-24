@@ -18,7 +18,6 @@ void C::run() {
         if (words[0] == connect_ and words.size() == 3) {
             this->addConnection(words[1], words[2]);
             int sd = create_socket(stoi(words[2]));
-            std::cout << "waiting for connection" << std::endl;
             std::thread receiver (receive, sd);
             receiver.detach();
 

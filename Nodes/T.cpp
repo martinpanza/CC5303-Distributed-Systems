@@ -26,6 +26,6 @@ void T::add_connection(std::string ip, std::string port) {
     int delay = random_int(2, 10);
     int MTU = random_mtu();
     std::pair<int, int> p = std::pair<int, int>(delay,MTU);
-    std::pair<std::string, std::pair<int, int>> P = std::pair<std::string, std::pair<int, int>>(ip + ":" + name, p);
+    std::pair<std::string, std::pair<int, int>> P = std::pair<std::string, std::pair<int, int>>(ip + ":" + port, p);
     this->connections.push_back(P);
 }

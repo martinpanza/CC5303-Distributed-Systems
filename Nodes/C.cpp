@@ -14,8 +14,9 @@ void C::run() {
     while(std::getline(std::cin, s)) {
         splitString(s, words, ' ');
         if (words[0] == connect_ and words.size() == 3) {
-            this->addConnection(words[1], words[2]);
             int sd = create_socket();
+            this->addConnection(words[1], words[2]);
+            std::cout << sd << std::endl;
         }
         else if (words[0] == send_ and words.size() == 4) {
             this->sendMessage(words[1], words[2], CHAT_MESSAGE, words[3]);

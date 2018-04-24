@@ -16,14 +16,15 @@ class Node {
         int port;
         std::string name;
         std::vector<std::pair<std::string, std::pair<int, int>>> connections;
-        std::deque<Packet> message_queue;
+        std::deque<char*> message_queue;
         int connectionIndex = 0;
 
 
     public:
         explicit Node(std::string ip, int port, std::string name);
+        char* makeHeader(std::string ip_dest);
         int establishConnection(int ip, int port);
-        int receivePacket(Packet p);
+        int receivePacket(char* p);
         void receiveTablePacket();
         void listening();
         void run();

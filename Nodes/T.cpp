@@ -4,10 +4,6 @@
 
 #include "T.h"
 #include <random>
-#include <cmath>
-#include <climits>
-#include <stdlib.h>
-#include <time.h>
 
 int random_int(int min, int max) {
     std::random_device rd;

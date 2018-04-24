@@ -13,6 +13,7 @@ class Packet {
 public:
     int header_length;
     int total_length;
+
 };
 
 

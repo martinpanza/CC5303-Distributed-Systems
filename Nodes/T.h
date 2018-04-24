@@ -12,6 +12,7 @@ class T : public Node {
 
     public:
         void add_connection(std::string name);
+        int send_message(std::string message);
 
 };
 

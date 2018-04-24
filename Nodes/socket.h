@@ -1,0 +1,11 @@
+//
+// Created by martin on 24-04-18.
+//
+
+#ifndef CC5303_DISTRIBUTED_SYSTEMS_SOCKET_H
+#define CC5303_DISTRIBUTED_SYSTEMS_SOCKET_H
+
+#endif //CC5303_DISTRIBUTED_SYSTEMS_SOCKET_H
+
+
+int create_socket();

@@ -4,6 +4,7 @@
 
 #include "T.h"
 #include <random>
+#include <time.h>
 
 int random_int(int min, int max) {
     std::random_device rd;
@@ -21,10 +22,10 @@ int random_mtu() {
     return arrayNum[RandIndex];
 }
 
-void T::add_connection(std::string name) {
+void T::add_connection(std::string ip, std::string port) {
     int delay = random_int(2, 10);
     int MTU = random_mtu();
     std::pair<int, int> p = std::pair<int, int>(delay,MTU);
-    std::pair<std::string, std::pair<int, int>> P = std::pair<std::string, std::pair<int, int>>(name, p);
+    std::pair<std::string, std::pair<int, int>> P = std::pair<std::string, std::pair<int, int>>(ip + ":" + name, p);
     this->connections.push_back(P);
 }

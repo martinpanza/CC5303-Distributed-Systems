@@ -11,7 +11,7 @@ class T : public Node {
     using Node::Node;
 
     public:
-        void add_connection(std::string name);
+        void add_connection(std::string ip, std::string port);
         int send_message(std::string message);
 
 };

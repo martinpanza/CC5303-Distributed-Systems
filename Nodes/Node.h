@@ -28,7 +28,7 @@ class Node {
         void receiveTablePacket();
         void listening();
         void run();
-        std::pair<Packet, Packet> fragment(Packet packet, int MTU);
+        std::pair<char *, char *> fragment(size_t packet, int MTU);
         void send_next_packet();
 };
 

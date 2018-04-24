@@ -37,7 +37,7 @@ std::pair<char *, char *> Node::fragment(size_t packet, int MTU) {
     return std::pair<char*, char*>();
 }
 
-void Node::send_next_packet() {
+void Node::sendNextPacket() {
     char* packet = this->message_queue.back();
     this->message_queue.pop_back();
 

@@ -4,10 +4,12 @@
 #include "Table.h"
 #include "../Packets/Packet.h"
 #include <string>
+#include <iostream>
 #include <deque>
 
 #ifndef CC5303_DISTRIBUTED_SYSTEMS_NODE_H
 #define CC5303_DISTRIBUTED_SYSTEMS_NODE_H
+
 
 class Node {
     protected:
@@ -29,7 +31,7 @@ class Node {
         void listening();
         virtual void run();
         std::pair<char *, char *> fragment(size_t packet, int MTU);
-        void send_next_packet();
+        void sendNextPacket();
 };
 
 

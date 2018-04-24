@@ -22,8 +22,8 @@ int establishConnection(int ip, int port) {
 
 }
 
-int receivePacket(Packet p);
-int sendPacket(Packet p);
+int receivePacket(std::string p);
+int sendPacket(std::string p);
 void listening();
 
 

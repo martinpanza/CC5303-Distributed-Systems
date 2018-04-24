@@ -3,9 +3,19 @@
 //
 
 #include "receive.h"
+#include <iostream>
+#include <stdio.h>
+#include <unistd.h>
+#include <sys/socket.h>
+#include <stdlib.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <string.h>
 
 void receive(int sd){
     char buffer[1024] = {0};
 
-    valread = read(sd, buffer, 1024);
+    int valread = read(sd, buffer, 1024);
+
+    std::cout << buffer << std::endl;
 }

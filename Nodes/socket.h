@@ -14,6 +14,4 @@
 #include <unistd.h>
 #include <string.h>
 
-#define PORT 8080
-
-int create_socket();
+int create_socket(int);

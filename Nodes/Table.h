@@ -13,9 +13,9 @@ class Table {
         std::vector<std::string> direct_routers;
         std::vector<std::vector<std::pair<std::string, std::vector<std::string>>>> reachable_clients;
     public:
-        void add_direct_client(std::string name);
-        void add_direct_router(std::string name);
-        void add_reachable_client(std::string name, std::vector<std::string> ways);
+        void addDirectClient(std::string name);
+        void addDirectRouter(std::string name);
+        void addReachableClient(std::string name, std::vector<std::string> ways);
 };
 
 

@@ -6,6 +6,10 @@
 #include <iostream>
 #include <deque>
 
+#define ACK_MESSAGE 1
+#define CHAT_MESSAGE 2
+#define TABLE_MESSAGE 3
+
 #ifndef CC5303_DISTRIBUTED_SYSTEMS_NODE_H
 #define CC5303_DISTRIBUTED_SYSTEMS_NODE_H
 
@@ -23,7 +27,6 @@ class Node {
 
     public:
         explicit Node(std::string ip, int port, std::string name);
-        char* makeHeader(std::string ip_dest);
         int establishConnection(int ip, int port);
         int receivePacket(char* p);
         void receiveTablePacket();

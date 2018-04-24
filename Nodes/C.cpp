@@ -18,12 +18,23 @@ void C::run() {
             int sd = create_socket();
         }
         else if (words[0] == send_ and words.size() == 4) {
-            this->sendMessage(words[1], words[2], words[3]);
+            this->sendMessage(words[1], words[2], CHAT_MESSAGE, words[3]);
         }
     }
 }
 
-int C::sendMessage(std::string ip, std::string port, std::string message) {
+/*
+Hacer header: ip_src, port_ src, ip_dest, port_dest, type, num_seq,
+        header_length, total_package_length, fragmented, offset(+refrag_offset), last_bit
+offset: de donde parto
+*/
+std::string C::makeHeader(std::string ip_dest, std::string port_dest, int type) {
+    std::string header = "";
+    return header;
+}
+
+int C::sendMessage(std::string ip_dest, std::string port_dest, int type, std::string message) {
+    std::string header = this->makeHeader(ip_dest, port_dest, type);
     return 0;
 }
 

@@ -13,7 +13,7 @@ class T : public Node {
     public:
         void run() override;
         void addConnection(std::string ip, std::string port);
-        int sendMessage(std::string ip, std::string port, std::string message);
+        int sendMessage(std::string ip_dest, std::string port_dest, int type, std::string message);
 
 };
 

@@ -48,12 +48,14 @@ int create_socket(int port)
         perror("listen");
         exit(EXIT_FAILURE);
     }
+    std::cout << "waiting for connection" << std::endl;
     if ((new_socket = accept(server_fd, (struct sockaddr *)&address,
                              (socklen_t*)&addrlen))<0)
     {
         perror("accept");
         exit(EXIT_FAILURE);
     }
+    std::cout << "connnection made" << std::endl;
     //valread = read( new_socket , buffer, 1024);
     return new_socket;
 }

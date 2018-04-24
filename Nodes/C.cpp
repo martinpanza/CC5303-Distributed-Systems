@@ -17,11 +17,15 @@ void C::run() {
         splitString(s, words, ' ');
         if (words[0] == connect_ and words.size() == 3) {
             this->addConnection(words[1], words[2]);
-            int sd = create_socket(this->port);
+            int sd = create_socket(stoi(words[2]));
+            std::cout << "waiting for connection" << std::endl;
             std::thread receiver (receive, sd);
-        }
-        else if (words[0] == send_ and words.size() == 4) {
+            receiver.detach();
+
+        } else if (words[0] == send_ and words.size() == 4) {
             this->sendMessage(words[1], words[2], CHAT_MESSAGE, words[3]);
+        } else {
+            std::cout << s << std::endl;
         }
     }
 }

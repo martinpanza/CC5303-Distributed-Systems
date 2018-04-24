@@ -3,12 +3,8 @@
 //
 
 // Server side C/C++ program to demonstrate Socket programming
-#include <stdio.h>
-#include <sys/socket.h>
-#include <stdlib.h>
-#include <netinet/in.h>
-#include <string.h>
-#define PORT 8080
+#include "socket.h"
+
 int create_socket()
 {
     int server_fd, new_socket, valread;

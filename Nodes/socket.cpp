@@ -44,7 +44,7 @@ int serverSocket(int port)
         perror("bind failed");
         exit(EXIT_FAILURE);
     }
-    if (listen(server_fd, 1) < 0)
+    if (listen(server_fd, 30) < 0)
     {
         perror("listen");
         exit(EXIT_FAILURE);

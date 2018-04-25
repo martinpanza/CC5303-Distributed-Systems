@@ -27,38 +27,26 @@ int random_mtu() {
 }
 
 int T::run() {
+    int server_fd = serverSocket(this->port);
+
+    std::thread accepter (acceptTh, *this, server_fd);
+    accepter.detach();
+
     std::string s;
     std::string connect_ = "connect";
     std::vector<std::string> words;
     while(std::getline(std::cin, s)) {
         splitString(s, words, ' ');
-        if (words[0] == connect_ and words.size() == 4) {
+        if (words[0] == connect_ and words.size() == 3) {
+            int client_sd = clientSocket(stoi(words[2]));
+
             this->addConnection(words[1], words[2]);
+            this->socketDescriptors.push_back(std::pair<int, std::string>(client_sd, words[1] + ":" + words[2]));
 
-            int server_fd = serverSocket(this->port);
-
-            int new_socket;
-            struct sockaddr_in address;
-            int addrlen = sizeof(address);
-
-            if ((new_socket = accept(server_fd, (struct sockaddr *)&address,
-                                     (socklen_t*)&addrlen))<0)
-            {
-                perror("accept");
-                exit(EXIT_FAILURE);
-            }
-
-            std::cout << "connnection made" << std::endl;
-            //std::thread sender (sendTh, *this, new_socket);
-            std::thread receiver (receiveTh, new_socket);
-            std::cout << "Sender and Receiver are now executing concurrently" << std::endl;
-            //sender.join();
-            receiver.join();
-            std::cout << "Sender and Receiver Completed" << std::endl;
-            return 0;
-
-
+            std::thread receiver (receiveTh, client_sd);
+            receiver.detach();
         }
+
     }
 }
 
@@ -68,4 +56,8 @@ void T::addConnection(std::string ip, std::string port) {
     std::pair<int, int> p = std::pair<int, int>(delay,MTU);
     std::pair<std::string, std::pair<int, int>> P = std::pair<std::string, std::pair<int, int>>(ip + ":" + port, p);
     this->connections.push_back(P);
+}
+
+int T::sendMessage(std::string ip_dest, std::string port_dest, int type, std::string message) {
+    return 0;
 }

@@ -22,9 +22,10 @@ int C::run() {
     while(std::getline(std::cin, s)) {
         splitString(s, words, ' ');
         if (words[0] == connect_ and words.size() == 3) {
-            this->addConnection(words[1], words[2]);
-
             int client_sd = clientSocket(stoi(words[2]));
+
+            this->addConnection(words[1], words[2]);
+            this->socketDescriptors.push_back(std::pair<int, std::string>(client_sd, words[1] + ":" + words[2]));
 
             std::thread receiver (receiveTh, client_sd);
             receiver.detach();

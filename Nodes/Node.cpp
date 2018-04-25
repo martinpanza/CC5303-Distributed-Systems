@@ -56,3 +56,7 @@ void Node::sendNextPacket() {
     this->connectionIndex = (this->connectionIndex + 1) % this->connections.size();
 
 }
+
+int Node::sendMessage(std::string ip_dest, std::string port_dest, int type, std::string message) {
+    return 0;
+}

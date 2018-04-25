@@ -15,7 +15,7 @@
 #include <thread>
 
 
-void acceptTh(C c, int sd) {
+void acceptTh(Node n, int sd) {
     while(1){
         int new_socket;
         struct sockaddr_in address;
@@ -28,9 +28,10 @@ void acceptTh(C c, int sd) {
             exit(EXIT_FAILURE);
         }
 
-        std::cout << "connnection established" << std::endl;
+        std::string ip = inet_ntoa(address.sin_addr);
+        std::string port = std::to_string(ntohs(address.sin_port));
 
-        c.socketDescriptor = new_socket;
+        std::cout << "connnection established with " << ip << ":" << port << std::endl;
 
         std::thread receiver (receiveTh, new_socket);
         receiver.detach();
@@ -47,19 +48,19 @@ void receiveTh(int sd){
     while (valread > 0){
         valread = read(sd, buffer, 1024);
         printf("%s\n", buffer);
-        send(sd, hello, strlen(hello), 0);
-        printf("Hello message sent\n");
+        //send(sd, hello, strlen(hello), 0);
+        //printf("Hello message sent\n");
     }
 }
 
-void sendTh(C c, int sd) {
+void sendTh(Node n, int sd) {
     std::string s;
     std::string message_ = "message";
     std::vector<std::string> words;
     while(std::getline(std::cin, s)) {
         splitString(s, words, ' ');
         if (words[0] == message_ and words.size() == 4) {
-            c.sendMessage(words[1], words[2], CHAT_MESSAGE, words[3]);
+            //n.sendMessage(words[1], words[2], CHAT_MESSAGE, words[3]);
         }
     }
 }

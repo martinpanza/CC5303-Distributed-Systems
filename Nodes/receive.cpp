@@ -16,10 +16,12 @@ void receive(int sd){
     std::cout << "ready to receive messages" << std::endl;
     char *hello="Hello from server";
     char buffer[1024] = {0};
-    int valread;
+    int valread = 1;
 
-    valread = read(sd, buffer, 1024);
-    printf("%s\n", buffer);
-    send(sd, hello, strlen(hello), 0);
-    printf("Hello message sent\n");
+    while (valread > 0){
+        valread = read(sd, buffer, 1024);
+        printf("%s\n", buffer);
+        send(sd, hello, strlen(hello), 0);
+        printf("Hello message sent\n");
+    }
 }

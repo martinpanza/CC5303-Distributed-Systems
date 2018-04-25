@@ -10,16 +10,16 @@
 #include <stdlib.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <sys/wait.h>
 #include <string.h>
 #include "socket.h"
 
 int create_socket(int port)
 {
-    int server_fd, new_socket, valread;
+    int server_fd, new_socket;
     struct sockaddr_in address;
     int opt = 1;
     int addrlen = sizeof(address);
-    //char buffer[1024] = {0};
 
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
     {
@@ -33,6 +33,7 @@ int create_socket(int port)
         perror("setsockopt");
         exit(EXIT_FAILURE);
     }
+
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = INADDR_ANY;
     address.sin_port = htons( port );
@@ -43,7 +44,7 @@ int create_socket(int port)
         perror("bind failed");
         exit(EXIT_FAILURE);
     }
-    if (listen(server_fd, 3) < 0)
+    if (listen(server_fd, 1) < 0)
     {
         perror("listen");
         exit(EXIT_FAILURE);
@@ -56,6 +57,5 @@ int create_socket(int port)
         exit(EXIT_FAILURE);
     }
     std::cout << "connnection made" << std::endl;
-    //valread = read( new_socket , buffer, 1024);
     return new_socket;
 }

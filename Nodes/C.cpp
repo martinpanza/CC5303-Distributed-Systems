@@ -32,7 +32,11 @@ int C::run() {
 
 
         } else if (words[0] == message_ and words.size() == 4) {
-            this->sendMessage(words[1], words[2], CHAT_MESSAGE, words[3]);
+            //this->sendMessage(words[1], words[2], CHAT_MESSAGE, words[3]);
+
+            char *hello="Hello from server";
+            send(this->socketDescriptors.front().first, hello, strlen(hello), 0);
+            printf("Hello message sent\n");
         }
 
     }

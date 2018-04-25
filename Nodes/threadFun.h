@@ -7,4 +7,7 @@
 
 #endif //CC5303_DISTRIBUTED_SYSTEMS_RECEIVE_H
 
-void receive(int);
+#include "C.h"
+
+void receiveTh(int);
+void sendTh(C c, int sd);

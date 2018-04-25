@@ -31,7 +31,7 @@ class Node {
         int receivePacket(char* p);
         void receiveTablePacket();
         void listening();
-        virtual void run();
+        virtual int run();
         std::pair<char *, char *> fragment(size_t packet, int MTU);
         void sendNextPacket();
 };

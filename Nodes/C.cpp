@@ -4,27 +4,28 @@
 
 #include "C.h"
 #include "socket.h"
-#include "receive.h"
+#include "threadFun.h"
 #include "../utils.h"
 #include <thread>
 
-void C::run() {
+int C::run() {
     std::string s;
     std::string connect_ = "connect";
-    std::string send_ = "send";
     std::vector<std::string> words;
     while(std::getline(std::cin, s)) {
         splitString(s, words, ' ');
         if (words[0] == connect_ and words.size() == 3) {
             this->addConnection(words[1], words[2]);
             int sd = create_socket(this->port);
-            std::thread receiver (receive, sd);
-            receiver.detach();
+            std::thread sender (sendTh, *this, sd);
+            std::thread receiver (receiveTh, sd);
+            std::cout << "Sender and Receiver are now executing concurrently" << std::endl;
+            sender.join();
+            receiver.join();
+            std::cout << "Sender and Receiver Completed" << std::endl;
+            return 0;
 
-        } else if (words[0] == send_ and words.size() == 4) {
-            this->sendMessage(words[1], words[2], CHAT_MESSAGE, words[3]);
-        } else {
-            std::cout << s << std::endl;
+
         }
     }
 }
@@ -40,7 +41,8 @@ std::string C::makeHeader(std::string ip_dest, std::string port_dest, int type) 
 }
 
 int C::sendMessage(std::string ip_dest, std::string port_dest, int type, std::string message) {
-    std::string header = this->makeHeader(ip_dest, port_dest, type);
+    //std::string header = this->makeHeader(ip_dest, port_dest, type);
+    std::cout << "send message" << std::endl;
     return 0;
 }
 

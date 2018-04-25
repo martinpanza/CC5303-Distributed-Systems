@@ -28,7 +28,7 @@ void listening();
 
 
 
-void Node::run() {
+int Node::run() {
     std::cout << "ready!";
 }
 

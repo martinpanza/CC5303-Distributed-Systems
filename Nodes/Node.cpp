@@ -168,6 +168,7 @@ std::pair<char *, char *> Node::fragment(size_t packet, int MTU) {
 }
 
 void Node::sendNextPacket() {
+    //TODO: Modificar para que se traiga un vector con todas las rutas UTILES de acuerdo al destino del paquete
     char* packet = this->message_queue.back();
     this->message_queue.pop_back();
 
@@ -184,4 +185,8 @@ void Node::sendNextPacket() {
 
     this->connectionIndex = (this->connectionIndex + 1) % this->connections.size();
 
+}
+
+int Node::sendMessage(std::string ip_dest, std::string port_dest, int type, std::string message) {
+    return 0;
 }

@@ -59,8 +59,14 @@ void sendTh(Node n, int sd) {
     std::vector<std::string> words;
     while(std::getline(std::cin, s)) {
         splitString(s, words, ' ');
-        if (words[0] == message_ and words.size() == 4) {
-            //n.sendMessage(words[1], words[2], CHAT_MESSAGE, words[3]);
+        if (words[0] == message_ and words.size() >= 4) {
+            std::string m;
+            for (int i = 3; i < words.size() - 1; i++) {
+                m += words[i];
+                m += ' ';
+            }
+            m += words[words.size() - 1];
+            //n.sendMessage(words[1], words[2], CHAT_MESSAGE, m);
         }
     }
 }

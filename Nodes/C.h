@@ -14,8 +14,8 @@ class C : public Node{
 
     public:
         int run() override;
-        void addConnection(std::string ip, std::string port);
         int sendMessage(std::string ip_dest, std::string port_dest, int type, std::string message) override;
+        void addConnection(std::string ip, std::string port);
 
     int socketDescriptor;
 };

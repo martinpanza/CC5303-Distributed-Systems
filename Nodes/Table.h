@@ -18,7 +18,6 @@ class Table {
         void addDirectRouter(std::string name);
         void addReachableClient(std::string name, std::vector<std::string> ways);
         // Adds a new router to a reachable client if it isn't already in the list
-        int addNewRoute(std::string router);
         std::vector<std::pair<std::string, std::vector<std::string>>>* getReachableClients();
         std::vector<std::string>* getDirectClients();
         std::vector<std::string>* getDirectRouters();

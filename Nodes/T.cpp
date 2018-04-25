@@ -4,10 +4,8 @@
 
 #include "T.h"
 #include <random>
-#include <time.h>
 #include "socket.h"
 #include "threadFun.h"
-#include "../utils.h"
 #include <thread>
 
 int random_int(int min, int max) {
@@ -37,10 +35,11 @@ int T::run() {
     std::vector<std::string> words;
     while(std::getline(std::cin, s)) {
         splitString(s, words, ' ');
-        if (words[0] == connect_ and words.size() == 3) {
+        // connect ip port type
+        if (words[0] == connect_ and words.size() == 4) {
             int client_sd = clientSocket(stoi(words[2]));
 
-            this->addConnection(words[1], words[2]);
+            this->addConnection(words[1], words[2], words[3]);
             this->socketDescriptors.push_back(std::pair<int, std::string>(client_sd, words[1] + ":" + words[2]));
 
             std::thread receiver (receiveTh, client_sd);
@@ -53,17 +52,43 @@ int T::run() {
 std::string T::makeTableMessage() {
     std::string message;
     std::string delimiter = ";";
+    std::vector<std::string>* direct_clients = (this->getTable())->getDirectClients();
     std::vector<std::pair<std::string, std::vector<std::string>>>* reachable_clients =
             (this->getTable())->getReachableClients();
-    for (int i = 0; i < (*reachable_clients).size() - 1; i++) {
-        message += ((*reachable_clients)[i]).first;
-        message += delimiter;
+
+    // Add the ones directly connected to this router
+    if ((*direct_clients).empty()) {
+        for (int i = 0; i < (*direct_clients).size() - 1; i++) {
+            message += (*direct_clients)[i];
+            message += delimiter;
+        }
+        message += (*direct_clients)[(*direct_clients).size() - 1];
+        if ((*reachable_clients).empty()) {
+            message += delimiter;
+        }
     }
-    message += (*reachable_clients)[(*reachable_clients).size() - 1].first;
+
+    // Add the reachable ones
+    if ((*reachable_clients).empty()) {
+        for (int i = 0; i < (*reachable_clients).size() - 1; i++) {
+            message += ((*reachable_clients)[i]).first;
+            message += delimiter;
+        }
+        message += (*reachable_clients)[(*reachable_clients).size() - 1].first;
+    }
+
     return message;
 }
 
-
+void T::shareTable() {
+    // Should share the table with all the direct routers
+    std::vector<std::string>* directRouters =(this->getTable())->getDirectRouters();
+    std::vector<std::string> ipport;
+    for (auto const &router : (*directRouters)) {
+        splitString(router, ipport, ':');
+        this->sendMessage(ipport[0], ipport[1], TABLE_MESSAGE, this->makeTableMessage());
+    }
+}
 
 void T::processTablePacket(const unsigned char* packet) {
     std::string srcIpPort = this->getSrcIp(packet) + std::to_string(this->getSrcPort(packet));
@@ -73,18 +98,18 @@ void T::processTablePacket(const unsigned char* packet) {
     std::vector<std::string>* direct_clients = (this->getTable())->getDirectClients();
     std::vector<std::string> new_clients;
     splitString(tableMessage, new_clients, ';');
-    bool oldClient, oldRouter, is_direct_client, sendUpdate = false;
+    bool oldClient, oldRouter, isDirectClient, sendUpdate = false;
     for (int i = 0; i < new_clients.size(); i++) {
         oldClient = false;
         // Check if im not directly connected
-        is_direct_client = false;
+        isDirectClient = false;
         for (int m = 0; m < (*direct_clients).size(); m++) {
             if (new_clients[i] == (*direct_clients)[m]) {
-                is_direct_client = true;
+                isDirectClient = true;
                 break;
             }
         }
-        if (is_direct_client) {
+        if (isDirectClient) {
             continue;
         }
 
@@ -115,16 +140,25 @@ void T::processTablePacket(const unsigned char* packet) {
         }
     }
     if (sendUpdate) {
-        //this->sendMessage()
+        this->shareTable();
     }
 }
 
-void T::addConnection(std::string ip, std::string port) {
+void T::addConnection(std::string ip, std::string port, std::string type) {
+    // add to connections
     int delay = random_int(2, 10);
     int MTU = random_mtu();
+    std::string ipport = ip + ":" + port;
     std::pair<int, int> p = std::pair<int, int>(delay,MTU);
-    std::pair<std::string, std::pair<int, int>> P = std::pair<std::string, std::pair<int, int>>(ip + ":" + port, p);
+    std::pair<std::string, std::pair<int, int>> P = std::pair<std::string, std::pair<int, int>>(ipport, p);
     this->connections.push_back(P);
+
+    // Put in direct routers or clients
+    if (type == "C") {
+        (this->getTable())->addDirectClient(ipport);
+    } else if (type == "T") {
+        (this->getTable())->addDirectRouter(ipport);
+    }
 }
 
 int T::sendMessage(std::string ip_dest, std::string port_dest, int type, std::string message) {

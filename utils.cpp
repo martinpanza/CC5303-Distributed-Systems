@@ -33,3 +33,9 @@ char *substring(size_t start, size_t stop, const char *src, char *dst, size_t si
     sprintf(dst, "%.*s", count, src + start);
     return dst;
 }
+
+std::vector<std::string> decomposeIpPort(std::string ipPort) {
+    std::vector<std::string> p;
+    splitString(ipPort, p, ':');
+    return p;
+}

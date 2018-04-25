@@ -4,37 +4,28 @@
 
 #include "C.h"
 #include "socket.h"
-#include "receive.h"
+#include "threadFun.h"
 #include "../utils.h"
 #include <thread>
 
-
-void C::run() {
+int C::run() {
     std::string s;
     std::string connect_ = "connect";
-    std::string send_ = "send";
     std::vector<std::string> words;
     while(std::getline(std::cin, s)) {
         splitString(s, words, ' ');
         if (words[0] == connect_ and words.size() == 3) {
             this->addConnection(words[1], words[2]);
-            int sd = create_socket(stoi(words[2]));
-            std::cout << "waiting for connection" << std::endl;
-            std::thread receiver (receive, sd);
-            receiver.detach();
+            int sd = create_socket(this->port);
+            std::thread sender (sendTh, *this, sd);
+            std::thread receiver (receiveTh, sd);
+            std::cout << "Sender and Receiver are now executing concurrently" << std::endl;
+            sender.join();
+            receiver.join();
+            std::cout << "Sender and Receiver Completed" << std::endl;
+            return 0;
 
-        } else if (words[0] == send_ and words.size() > 3) {
-            std::string message;
-            for (int i = 3; i < words.size() - 1; i++) {
-                message += words[i];
-                message += " ";
-            }
-            message += words[words.size() - 1];
-            auto packet = this->makePacket(words[1], words[2], CHAT_MESSAGE, message);
-            //this->printPacket(packet);
-            this->sendMessage(words[1], words[2], CHAT_MESSAGE, words[3]);
-        } else {
-            std::cout << s << std::endl;
+
         }
     }
 }
@@ -44,11 +35,14 @@ Hacer header: ip_src, port_ src, ip_dest, port_dest, type, num_seq,
         header_length, total_package_length, fragmented, offset(+refrag_offset), last_bit
 offset: de donde parto
 */
-
-
+std::string C::makeHeader(std::string ip_dest, std::string port_dest, int type) {
+    std::string header = "";
+    return header;
+}
 
 int C::sendMessage(std::string ip_dest, std::string port_dest, int type, std::string message) {
-    unsigned char* packet = this->makePacket(std::move(ip_dest), std::move(port_dest), type, std::move(message));
+    //std::string header = this->makeHeader(ip_dest, port_dest, type);
+    std::cout << "send message" << std::endl;
     return 0;
 }
 

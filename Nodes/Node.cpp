@@ -153,7 +153,7 @@ unsigned char* Node::makePacket(std::string ip_dest, std::string port_dest, int 
     return packet;
 }
 
-void Node::run() {
+int Node::run() {
     std::cout << "ready!";
 }
 

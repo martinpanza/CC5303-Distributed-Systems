@@ -13,7 +13,7 @@ class C : public Node{
         int waitingForAck = 0;
 
     public:
-        void run() override;
+        int run() override;
         void addConnection(std::string ip, std::string port);
         int sendMessage(std::string ip_dest, std::string port_dest, int type, std::string message);
 };

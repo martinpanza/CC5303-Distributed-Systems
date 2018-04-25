@@ -140,7 +140,7 @@ unsigned char* Node::makePacket(std::string ip_dest, std::string port_dest, int 
     packet[15] = (unsigned char) 0;
 
     // Offset
-    uint16_t starting_offset = 40;
+    uint16_t starting_offset = 0;
     packet[16] = (unsigned char) (starting_offset >> 8);
     packet[17] = (unsigned char) (starting_offset & 0xFF);
 

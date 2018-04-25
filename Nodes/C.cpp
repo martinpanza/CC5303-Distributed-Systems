@@ -30,16 +30,6 @@ int C::run() {
     }
 }
 
-/*
-Hacer header: ip_src, port_ src, ip_dest, port_dest, type, num_seq,
-        header_length, total_package_length, fragmented, offset(+refrag_offset), last_bit
-offset: de donde parto
-*/
-std::string C::makeHeader(std::string ip_dest, std::string port_dest, int type) {
-    std::string header = "";
-    return header;
-}
-
 int C::sendMessage(std::string ip_dest, std::string port_dest, int type, std::string message) {
     //std::string header = this->makeHeader(ip_dest, port_dest, type);
     std::cout << "send message" << std::endl;

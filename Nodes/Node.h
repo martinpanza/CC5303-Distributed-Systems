@@ -35,6 +35,7 @@ class Node {
         void receiveTablePacket();
         void listening();
         virtual int run();
+        Table* getTable();
         std::string getSrcIp(const unsigned char* packet);
         std::string getDestIp(const unsigned char* packet);
         std::string getMessage(const unsigned char* packet);

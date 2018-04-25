@@ -11,9 +11,13 @@ class T : public Node {
     using Node::Node;
 
     public:
+        bool sendUpdate;
+
         int run() override;
         void addConnection(std::string ip, std::string port);
         int sendMessage(std::string ip_dest, std::string port_dest, int type, std::string message);
+        std::string makeTableMessage();
+        void processTablePacket(const unsigned char* packet);
 
 };
 

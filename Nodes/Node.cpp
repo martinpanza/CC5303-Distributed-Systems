@@ -29,6 +29,11 @@ int receivePacket(std::string p);
 int sendPacket(std::string p);
 void listening();
 
+
+Table* Node::getTable() {
+    return &(this->table);
+}
+
 uint16_t Node::getSrcPort(const unsigned char* packet) {
     return packet[5] | uint16_t(packet[4]) << 8;
 }

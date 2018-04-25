@@ -7,6 +7,17 @@
 #include <vector>
 #include <stdlib.h>
 
+std::vector<std::pair<std::string, std::vector<std::string>>>* Table::getReachableClients() {
+    return &(this->reachable_clients);
+}
+
+std::vector<std::string>* Table::getDirectClients() {
+    return &(this->direct_clients);
+}
+std::vector<std::string>* Table::getDirectRouters() {
+    return &(this->direct_routers);
+}
+
 void Table::addDirectClient(std::string name) {
     this->direct_clients.push_back(name);
 }
@@ -17,7 +28,6 @@ void Table::addDirectRouter(std::string name) {
 
 void Table::addReachableClient(std::string name, std::vector<std::string> ways) {
     std::pair<std::string, std::vector<std::string>> p = std::pair<std::string, std::vector<std::string>>(name, ways);
-    std::vector<std::pair<std::string, std::vector<std::string>>> v;
-    v.push_back(p);
-    this->reachable_clients.push_back(v);
+    this->reachable_clients.push_back(p);
 }
+

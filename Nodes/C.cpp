@@ -24,8 +24,6 @@ int C::run() {
             receiver.join();
             std::cout << "Sender and Receiver Completed" << std::endl;
             return 0;
-
-
         }
     }
 }

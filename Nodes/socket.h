@@ -14,4 +14,5 @@
 #include <unistd.h>
 #include <string.h>
 
-int create_socket(int);
+int serverSocket(int);
+int clientSocket(int);

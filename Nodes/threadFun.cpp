@@ -12,6 +12,32 @@
 #include <arpa/inet.h>
 #include <string.h>
 #include "../utils.h"
+#include <thread>
+
+
+void acceptTh(Node n, int sd) {
+    while(1){
+        int new_socket;
+        struct sockaddr_in address;
+        int addrlen = sizeof(address);
+
+        if ((new_socket = accept(sd, (struct sockaddr *)&address,
+                                 (socklen_t*)&addrlen))<0)
+        {
+            perror("accept");
+            exit(EXIT_FAILURE);
+        }
+
+        std::string ip = inet_ntoa(address.sin_addr);
+        std::string port = std::to_string(ntohs(address.sin_port));
+
+        std::cout << "connnection established with " << ip << ":" << port << std::endl;
+
+        std::thread receiver (receiveTh, new_socket);
+        receiver.detach();
+    }
+
+}
 
 void receiveTh(int sd){
     std::cout << "ready to receive messages" << std::endl;
@@ -22,19 +48,20 @@ void receiveTh(int sd){
     while (valread > 0){
         valread = read(sd, buffer, 1024);
         printf("%s\n", buffer);
-        send(sd, hello, strlen(hello), 0);
-        printf("Hello message sent\n");
+        //send(sd, hello, strlen(hello), 0);
+        //printf("Hello message sent\n");
     }
 }
 
-void sendTh(C c, int sd) {
+void sendTh(Node n, int sd) {
     std::string s;
     std::string message_ = "message";
     std::vector<std::string> words;
     while(std::getline(std::cin, s)) {
         splitString(s, words, ' ');
         if (words[0] == message_ and words.size() == 4) {
-            c.sendMessage(words[1], words[2], CHAT_MESSAGE, words[3]);
+            //n.sendMessage(words[1], words[2], CHAT_MESSAGE, words[3]);
         }
     }
 }
+

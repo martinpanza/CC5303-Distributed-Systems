@@ -12,6 +12,31 @@
 #include <arpa/inet.h>
 #include <string.h>
 #include "../utils.h"
+#include <thread>
+
+
+void acceptTh(C c, int sd) {
+    while(1){
+        int new_socket;
+        struct sockaddr_in address;
+        int addrlen = sizeof(address);
+
+        if ((new_socket = accept(sd, (struct sockaddr *)&address,
+                                 (socklen_t*)&addrlen))<0)
+        {
+            perror("accept");
+            exit(EXIT_FAILURE);
+        }
+
+        std::cout << "connnection established" << std::endl;
+
+        c.socketDescriptor = new_socket;
+
+        std::thread receiver (receiveTh, new_socket);
+        receiver.detach();
+    }
+
+}
 
 void receiveTh(int sd){
     std::cout << "ready to receive messages" << std::endl;
@@ -38,3 +63,4 @@ void sendTh(C c, int sd) {
         }
     }
 }
+

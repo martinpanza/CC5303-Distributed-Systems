@@ -38,6 +38,7 @@ std::pair<char *, char *> Node::fragment(size_t packet, int MTU) {
 }
 
 void Node::sendNextPacket() {
+    //TODO: Modificar para que se traiga un vector con todas las rutas UTILES de acuerdo al destino del paquete
     char* packet = this->message_queue.back();
     this->message_queue.pop_back();
 

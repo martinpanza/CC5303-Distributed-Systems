@@ -11,3 +11,4 @@
 
 
 size_t splitString(const std::string &txt, std::vector<std::string> &strs, char ch);
+char *substring(size_t start, size_t stop, const char *src, char *dst, size_t size);

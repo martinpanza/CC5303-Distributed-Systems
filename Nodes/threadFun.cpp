@@ -54,7 +54,7 @@ void receiveTh(Node *n, int sd){
 void sendTh(Node *n) {
     unsigned char* packet;
     std::string name;
-    std::vector
+    std::vector usefulRouters;
     while (1) {
         n->mtx.lock();
         if (!n->message_queue.empty()) {
@@ -62,7 +62,7 @@ void sendTh(Node *n) {
             n->message_queue.pop_front();
             n->mtx.unlock();
             name = n->getDestIp(packet) + ":" + n->getDestPort(packet);
-
+            usefulRouters = n->searchConnectedRouter(name);
         } else {
             n->mtx.unlock();
         }

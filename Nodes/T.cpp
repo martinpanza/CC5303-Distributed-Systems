@@ -27,8 +27,11 @@ int random_mtu() {
 int T::run() {
     int server_fd = serverSocket(this->port);
 
-    std::thread accepter (acceptTh, *this, server_fd);
+    std::thread accepter (acceptTh, server_fd);
     accepter.detach();
+
+    std::thread sender (sendTh, this);
+    sender.detach();
 
     std::string s;
     std::string connect_ = "connect";

@@ -15,7 +15,7 @@
 #include <thread>
 
 
-void acceptTh(Node n, int sd) {
+void acceptTh(int sd) {
     while(1){
         int new_socket;
         struct sockaddr_in address;
@@ -39,17 +39,33 @@ void acceptTh(Node n, int sd) {
 
 }
 
-void receiveTh(int sd){
-    std::cout << "ready to receive messages" << std::endl;
-    char *hello="Hello from server";
+void sendTh(Node* n) {
+    unsigned char* packet;
+    std::string ip;
+    std::string port;
+    std::string name;
+    while(1){
+        n->mtx.lock();
+        if (!n->message_queue.empty()){
+            packet = n->message_queue.front();
+            n->message_queue.pop_front();
+            n->mtx.unlock();
+            ip = n->getDestIp(packet);
+            port = n->getDestPort(packet);
+            name = ip + ":" + port;
+        }
+    }
+}
+
+void receiveTh(Node* n, int sd){
     char buffer[1024] = {0};
     int valread = 1;
-
-    while (valread > 0){
+    while(1){
         valread = read(sd, buffer, 1024);
         printf("%s\n", buffer);
-        //send(sd, hello, strlen(hello), 0);
-        //printf("Hello message sent\n");
+        n->mtx.lock();
+        //n->message_queue.push_back(buffer);
+        n->mtx.unlock();
     }
 }
 

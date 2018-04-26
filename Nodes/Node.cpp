@@ -25,6 +25,19 @@ int Node::run() {
     return 0;
 }
 
+int Node::receivePacket(char* p) {
+    return 0;
+}
+
+int Node::sendMessage(std::string ip_dest, std::string port_dest, int type, std::string message) {
+    std::cout << ip_dest << ":" << port_dest << " " << type << " " << message;
+    return 0;
+}
+
+void Node::receiveTablePacket() {
+    return;
+}
+
 Table* Node::getTable() {
     return &(this->table);
 }

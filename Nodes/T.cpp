@@ -38,6 +38,9 @@ int T::run() {
     std::vector<std::string> words;
     while(std::getline(std::cin, s)) {
         splitString(s, words, ' ');
+        if (words[1] == "localhost"){
+            words[1] = "127.0.0.1";
+        }
         // connect ip port type
         if (words[0] == connect_ and words.size() == 4) {
             int client_sd = clientSocket(stoi(words[2]));

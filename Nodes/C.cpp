@@ -18,7 +18,14 @@ int C::sendMessage(std::string ip_dest, std::string port_dest, int type, std::st
     std::cout << "send message" << std::endl;
     unsigned char* packet = this->makePacket(std::move(ip_dest), std::move(port_dest), type, message);
     auto totalLength = (size_t) this->getTotalLength(packet);
+    std::cout << "saliendo de C" << std::endl;
+    std::cout << this->getMessage(packet) << std::endl;
+    std::cout << totalLength << std::endl;
+
+
+    //char* packet2 = "hola!";
     send(sd, packet, totalLength, 0);
+    std::cout << "salio de C" << std::endl;
     return 0;
 }
 
@@ -38,9 +45,12 @@ int C::run() {
     int client_sd;
     while(std::getline(std::cin, s)) {
         splitString(s, words, ' ');
+        if (words[1] == "localhost"){
+            words[1] = "127.0.0.1";
+        }
         // cliente necesita tener tipo? solo se conecta a otros T
         if (words[0] == connect_ and words.size() == 3) {
-            int client_sd = clientSocket(stoi(words[2]));
+            client_sd = clientSocket(stoi(words[2]));
 
             this->addConnection(words[1], words[2]);
             this->socketDescriptors.push_back(std::pair<int, std::string>(client_sd, words[1] + ":" + words[2]));

@@ -43,12 +43,17 @@ void acceptTh(Node *n, int sd) {
 void receiveTh(Node *n, int sd){
     char buffer[1024] = {0};
     int valread = 1;
-    while (1) {
+    while (valread > 0) {
         valread = read(sd, buffer, 1024);
+        std::cout << "mensaje recibido: " << valread << std::endl;
         auto to = (char*) malloc(valread * sizeof(char));
         strncpy(to, buffer, valread);
+        std::cout << "mensaje transformado: " << n->getMessage((unsigned char*)buffer) << std::endl;
+        n->printPacket((unsigned char*)buffer);
+
         (n->mtx).lock();
         (n->message_queue).push_back((unsigned  char*)to);
+        std::cout << n->getMessage(n->message_queue.back()) << std::endl;
         (n->mtx).unlock();
         // printf("%s\n", buffer);
     }

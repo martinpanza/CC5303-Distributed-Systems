@@ -6,6 +6,7 @@
 #include <iostream>
 #include <deque>
 #include "../utils.h"
+#include <mutex>
 
 #define ACK_MESSAGE 1
 #define CHAT_MESSAGE 2
@@ -19,17 +20,18 @@
 
 class Node {
 
-protected:
+public:
+    std::mutex mtx;
     Table table;
     std::string ip;
     uint16_t port;
     std::string name;
     std::vector<std::pair<std::string, std::pair<int, int>>> connections;
-    std::deque<char*> message_queue;
+    std::deque<unsigned char*> message_queue;
     int connectionIndex = 0;
-
-public:
     std::vector<std::pair<int, std::string>> socketDescriptors;
+
+    std::vector<std::string> searchConnectedRouter(std::string name);
     explicit Node(std::string ip, uint16_t port, std::string name);
     virtual int receivePacket(char* p);
     virtual void receiveTablePacket();

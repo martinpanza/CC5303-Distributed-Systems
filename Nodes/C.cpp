@@ -14,11 +14,11 @@ void C::addConnection(std::string ip, std::string port) {
     this->connections.push_back(std::pair<std::string, std::pair<int, int>>(ip + ":" + port , std::pair<int, int>(1,512)));
 }
 
-int C::sendMessage(std::string ip_dest, std::string port_dest, int type, std::string message) {
+int C::sendMessage(std::string ip_dest, std::string port_dest, int type, std::string message, int sd) {
     std::cout << "send message" << std::endl;
     unsigned char* packet = this->makePacket(std::move(ip_dest), std::move(port_dest), type, message);
     auto totalLength = (size_t) this->getTotalLength(packet);
-    send(this->socketDescriptors.front().first, packet, totalLength, 0);
+    send(sd, packet, totalLength, 0);
     return 0;
 }
 
@@ -28,10 +28,14 @@ int C::run() {
     std::thread accepter (acceptTh, this, server_fd);
     accepter.detach();
 
+    std::thread cProcessor (cProcessTh, this, server_fd);
+    cProcessor.detach();
+
     std::string s;
     std::string connect_ = "connect";
     std::string message_ = "message";
     std::vector<std::string> words;
+    int client_sd;
     while(std::getline(std::cin, s)) {
         splitString(s, words, ' ');
         // cliente necesita tener tipo? solo se conecta a otros T
@@ -52,7 +56,7 @@ int C::run() {
                 m += ' ';
             }
             m += words[words.size() - 1];
-            this->sendMessage(words[1], words[2], CHAT_MESSAGE, m);
+            this->sendMessage(words[1], words[2], CHAT_MESSAGE, m, client_sd);
             printf("Message sent\n");
         }
     }

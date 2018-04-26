@@ -13,7 +13,7 @@ class T : public Node {
 public:
     int run() override;
     void addConnection(std::string ip, std::string port, std::string type);
-    int sendMessage(std::string ip_dest, std::string port_dest, int type, std::string message) override;
+    int sendMessage(std::string ip_dest, std::string port_dest, int type, std::string message, int sd) override;
     std::string makeTableMessage();
     void processTablePacket(const unsigned char* packet);
     void broadcastTable();

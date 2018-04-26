@@ -29,7 +29,7 @@ int Node::receivePacket(char* p) {
     return 0;
 }
 
-int Node::sendMessage(std::string ip_dest, std::string port_dest, int type, std::string message) {
+int Node::sendMessage(std::string ip_dest, std::string port_dest, int type, std::string message, int sd) {
     std::cout << ip_dest << ":" << port_dest << " " << type << " " << message;
     return 0;
 }
@@ -201,6 +201,15 @@ void Node::sendNextPacket() {
 
     this->connectionIndex = (int) ((this->connectionIndex + 1) % this->connections.size());
     */
+}
+
+int Node::getSocketDescriptor(std::string name) {
+    for (int i = 0; i < this->socketDescriptors.size(); i++){
+        if (name == this->socketDescriptors[i].second){
+            return this->socketDescriptors[i].first;
+        }
+    }
+    return -1;
 }
 
 

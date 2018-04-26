@@ -87,12 +87,12 @@ void T::broadcastTable() {
     std::vector<std::string> ipport;
     for (auto const &router : (*directRouters)) {
         splitString(router, ipport, ':');
-        this->sendMessage(ipport[0], ipport[1], TABLE_MESSAGE, this->makeTableMessage());
+        this->sendMessage(ipport[0], ipport[1], TABLE_MESSAGE, this->makeTableMessage(), 0);
     }
 }
 
 void T::shareTable(std::string ip, std::string port) {
-    this->sendMessage(std::move(ip), std::move(port), TABLE_MESSAGE, this->makeTableMessage());
+    this->sendMessage(std::move(ip), std::move(port), TABLE_MESSAGE, this->makeTableMessage(), 0);
 }
 
 void T::processTablePacket(const unsigned char* packet) {
@@ -169,6 +169,10 @@ void T::addConnection(std::string ip, std::string port, std::string type) {
     this->connections.push_back(P);
 }
 
-int T::sendMessage(std::string ip_dest, std::string port_dest, int type, std::string message) {
+int T::sendMessage(std::string ip_dest, std::string port_dest, int type, std::string message, int sd) {
+    std::cout << "send message" << std::endl;
+    unsigned char* packet = this->makePacket(std::move(ip_dest), std::move(port_dest), type, message);
+    auto totalLength = (size_t) this->getTotalLength(packet);
+    send(sd, packet, totalLength, 0);
     return 0;
 }

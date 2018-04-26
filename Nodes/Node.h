@@ -51,7 +51,8 @@ public:
     unsigned char* makePacket(std::string ip_dest, std::string port_dest, int type, std::string message);
     std::pair<char *, char *> fragment(size_t packet, int MTU);
     void sendNextPacket();
-    virtual int sendMessage(std::string ip_dest, std::string port_dest, int type, std::string message);
+    virtual int sendMessage(std::string ip_dest, std::string port_dest, int type, std::string message, int sd);
+    int getSocketDescriptor(std::string basic_string);
 };
 
 

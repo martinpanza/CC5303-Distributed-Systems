@@ -57,6 +57,8 @@ void receiveTh(Node *n, int sd){
 void sendTh(Node *n) {
     unsigned char* packet;
     std::string name;
+    std::string ip;
+    std::string port;
     std::vector<std::string> usefulRouters;
     while (1) {
         (n->mtx).lock();
@@ -64,11 +66,37 @@ void sendTh(Node *n) {
             packet = (n->message_queue).front();
             (n->message_queue).pop_front();
             (n->mtx).unlock();
-            name = n->getDestIp(packet) + ":" + std::to_string(n->getDestPort(packet));
+            ip = n->getDestIp(packet);
+            port = std::to_string(n->getDestPort(packet));
+            name = ip + ":" + port;
             usefulRouters = n->searchConnectedRouter(name);
+            int sd = n->getSocketDescriptor(usefulRouters.front());
+            n->sendMessage(ip, port, n->getType(packet), n->getMessage(packet), sd);
         } else {
             (n->mtx).unlock();
         }
+        sleep(1);
+    }
+}
+
+void cProcessTh(Node *n, int sd) {
+    unsigned char* packet;
+    while (1){
+        (n->mtx).lock();
+        if (!n->message_queue.empty()){
+            packet = (n->message_queue).front();
+            (n->message_queue).pop_front();
+            (n->mtx).unlock();
+            if (n->getType(packet) == CHAT_MESSAGE){
+                std::cout << "llego mensaje de " << n->getDestPort(packet) << " : " << n->getMessage(packet);
+                //TODO:send ACK
+            } else{
+                //TODO: es ACK y desbloquea nodo
+            }
+        } else{
+            (n->mtx).unlock();
+        }
+        sleep(5);
     }
 }
 

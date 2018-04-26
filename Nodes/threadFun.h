@@ -12,3 +12,4 @@
 void acceptTh(Node *n, int sd);
 void receiveTh(Node *n, int sd);
 void sendTh(Node* n);
+void cProcessTh(Node*n, int sd);

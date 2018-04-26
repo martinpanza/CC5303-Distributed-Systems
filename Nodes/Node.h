@@ -18,42 +18,38 @@
 
 
 class Node {
-    protected:
-        Table table;
-        std::string ip;
-        uint16_t port;
-        std::string name;
-        std::vector<std::pair<std::string, std::pair<int, int>>> connections;
-        std::deque<char*> message_queue;
-        int connectionIndex = 0;
 
+protected:
+    Table table;
+    std::string ip;
+    uint16_t port;
+    std::string name;
+    std::vector<std::pair<std::string, std::pair<int, int>>> connections;
+    std::deque<char*> message_queue;
+    int connectionIndex = 0;
 
-    public:
-        explicit Node(std::string ip, uint16_t port, std::string name);
-        int establishConnection(int ip, int port);
-        int receivePacket(char* p);
-        void receiveTablePacket();
-        void listening();
-        virtual int run();
-        Table* getTable();
-        std::string getSrcIp(const unsigned char* packet);
-        std::string getDestIp(const unsigned char* packet);
-        std::string getMessage(const unsigned char* packet);
-        int getLastBit(const unsigned char* packet);
-        int getFragmentBit(const unsigned char* packet);
-        uint16_t getTotalLength(const unsigned char* packet);
-        int getType(const unsigned char* packet);
-        uint16_t getOffset(const unsigned char* packet);
-        uint16_t getSrcPort(const unsigned char* packet);
-        uint16_t getDestPort(const unsigned char* packet);
-        void printPacket(const unsigned char* packet);
-        unsigned char* makePacket(std::string ip_dest, std::string port_dest, int type, std::string message);
-        std::pair<char *, char *> fragment(size_t packet, int MTU);
-        void sendNextPacket();
-
-    virtual int sendMessage(std::string ip_dest, std::string port_dest, int type, std::string message);
-
+public:
     std::vector<std::pair<int, std::string>> socketDescriptors;
+    explicit Node(std::string ip, uint16_t port, std::string name);
+    virtual int receivePacket(char* p);
+    virtual void receiveTablePacket();
+    virtual int run();
+    Table* getTable();
+    std::string getSrcIp(const unsigned char* packet);
+    std::string getDestIp(const unsigned char* packet);
+    std::string getMessage(const unsigned char* packet);
+    int getLastBit(const unsigned char* packet);
+    int getFragmentBit(const unsigned char* packet);
+    uint16_t getTotalLength(const unsigned char* packet);
+    int getType(const unsigned char* packet);
+    uint16_t getOffset(const unsigned char* packet);
+    uint16_t getSrcPort(const unsigned char* packet);
+    uint16_t getDestPort(const unsigned char* packet);
+    void printPacket(const unsigned char* packet);
+    unsigned char* makePacket(std::string ip_dest, std::string port_dest, int type, std::string message);
+    std::pair<char *, char *> fragment(size_t packet, int MTU);
+    void sendNextPacket();
+    virtual int sendMessage(std::string ip_dest, std::string port_dest, int type, std::string message);
 };
 
 

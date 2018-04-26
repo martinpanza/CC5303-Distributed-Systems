@@ -45,7 +45,6 @@ int T::run() {
             std::thread receiver (receiveTh, client_sd);
             receiver.detach();
         }
-
     }
 }
 
@@ -76,11 +75,10 @@ std::string T::makeTableMessage() {
         }
         message += (*reachable_clients)[(*reachable_clients).size() - 1].first;
     }
-
     return message;
 }
 
-void T::shareTable() {
+void T::broadcastTable() {
     // Should share the table with all the direct routers
     std::vector<std::string>* directRouters =(this->getTable())->getDirectRouters();
     std::vector<std::string> ipport;
@@ -90,8 +88,12 @@ void T::shareTable() {
     }
 }
 
+void T::shareTable(std::string ip, std::string port) {
+    this->sendMessage(std::move(ip), std::move(port), TABLE_MESSAGE, this->makeTableMessage());
+}
+
 void T::processTablePacket(const unsigned char* packet) {
-    std::string srcIpPort = this->getSrcIp(packet) + std::to_string(this->getSrcPort(packet));
+    std::string srcIpPort = this->getSrcIp(packet) + ":" + std::to_string(this->getSrcPort(packet));
     std::string tableMessage = this->getMessage(packet);
     std::vector<std::pair<std::string, std::vector<std::string>>>* reachable_clients =
             (this->getTable())->getReachableClients();
@@ -140,25 +142,28 @@ void T::processTablePacket(const unsigned char* packet) {
         }
     }
     if (sendUpdate) {
-        this->shareTable();
+        this->broadcastTable();
     }
 }
 
 void T::addConnection(std::string ip, std::string port, std::string type) {
-    // add to connections
+    std::string ipport = ip + ":" + port;
     int delay = random_int(2, 10);
     int MTU = random_mtu();
-    std::string ipport = ip + ":" + port;
-    std::pair<int, int> p = std::pair<int, int>(delay,MTU);
-    std::pair<std::string, std::pair<int, int>> P = std::pair<std::string, std::pair<int, int>>(ipport, p);
-    this->connections.push_back(P);
-
     // Put in direct routers or clients
     if (type == "C") {
+        delay = 1;
+        MTU = 512;
         (this->getTable())->addDirectClient(ipport);
     } else if (type == "T") {
         (this->getTable())->addDirectRouter(ipport);
+        // Should share table instantly?
+        this->shareTable(ip, port);
     }
+    // add to connections
+    std::pair<int, int> p = std::pair<int, int>(delay,MTU);
+    std::pair<std::string, std::pair<int, int>> P = std::pair<std::string, std::pair<int, int>>(ipport, p);
+    this->connections.push_back(P);
 }
 
 int T::sendMessage(std::string ip_dest, std::string port_dest, int type, std::string message) {

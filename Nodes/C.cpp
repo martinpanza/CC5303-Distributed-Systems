@@ -15,6 +15,9 @@ void C::addConnection(std::string ip, std::string port) {
 
 int C::sendMessage(std::string ip_dest, std::string port_dest, int type, std::string message) {
     std::cout << "send message" << std::endl;
+    unsigned char* packet = this->makePacket(std::move(ip_dest), std::move(port_dest), type, message);
+    auto totalLength = (size_t) this->getTotalLength(packet);
+    send(this->socketDescriptors.front().first, packet, totalLength, 0);
     return 0;
 }
 
@@ -48,11 +51,8 @@ int C::run() {
                 m += ' ';
             }
             m += words[words.size() - 1];
-            //this->sendMessage(words[1], words[2], CHAT_MESSAGE, m);
-
-            char *hello = "Hello from server";
-            send(this->socketDescriptors.front().first, hello, strlen(hello), 0);
-            printf("Hello message sent\n");
+            this->sendMessage(words[1], words[2], CHAT_MESSAGE, m);
+            printf("Message sent\n");
         }
     }
 }

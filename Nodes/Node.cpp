@@ -21,14 +21,9 @@ Node::Node(std::string ip, uint16_t port, std::string name) {
     this->table = *new Table();
 }
 
-int establishConnection(int ip, int port) {
-
+int Node::run() {
+    return 0;
 }
-
-int receivePacket(std::string p);
-int sendPacket(std::string p);
-void listening();
-
 
 Table* Node::getTable() {
     return &(this->table);
@@ -63,7 +58,7 @@ int Node::getFragmentBit(const unsigned char* packet) {
 }
 
 std::string Node::getSrcIp(const unsigned char* packet) {
-    std::string ip = "";
+    std::string ip;
     std::string ip_delimiter = ".";
     ip += std::to_string(packet[0]);
     ip += ip_delimiter;
@@ -76,7 +71,7 @@ std::string Node::getSrcIp(const unsigned char* packet) {
 }
 
 std::string Node::getDestIp(const unsigned char* packet) {
-    std::string ip = "";
+    std::string ip;
     std::string ip_delimiter = ".";
     ip += std::to_string(packet[6]);
     ip += ip_delimiter;
@@ -92,7 +87,7 @@ std::string Node::getMessage(const unsigned char* packet) {
     uint16_t total_length = this->getTotalLength(packet);
     int data_length = total_length - HEADER_SIZE;
     char message[data_length];
-    substring(HEADER_SIZE, data_length,(const char*)packet, message, total_length);
+    substring(HEADER_SIZE, (size_t) data_length,(const char*)packet, message, total_length);
     return std::string(message);
 }
 
@@ -130,7 +125,7 @@ unsigned char* Node::makePacket(std::string ip_dest, std::string port_dest, int 
     }
 
     // Destination port
-    uint16_t dport = (uint16_t) stoi(port_dest);
+    auto dport = (uint16_t) stoi(port_dest);
     packet[10] = (unsigned char) (dport >> 8); // hi
     packet[11] = (unsigned char) (dport & 0xFF); // lo
 
@@ -158,13 +153,9 @@ unsigned char* Node::makePacket(std::string ip_dest, std::string port_dest, int 
     return packet;
 }
 
-int Node::run() {
-    std::cout << "ready!";
-}
-
 std::pair<char *, char *> Node::fragment(size_t packet, int MTU) {
     //TODO: reduce size of packet to MTU size, and return both new packets
-    return std::pair<char*, char*>();
+    return {};
 }
 
 void Node::sendNextPacket() {
@@ -180,13 +171,10 @@ void Node::sendNextPacket() {
         this->message_queue.push_back(fragmentedPackets.second);
     }
 
-    //TODO: serialize packet
     //TODO: send through this->connections[this->connectionIndex];
 
-    this->connectionIndex = (this->connectionIndex + 1) % this->connections.size();
+    this->connectionIndex = (int) ((this->connectionIndex + 1) % this->connections.size());
 
 }
 
-int Node::sendMessage(std::string ip_dest, std::string port_dest, int type, std::string message) {
-    return 0;
-}
+

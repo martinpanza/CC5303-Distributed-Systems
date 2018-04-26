@@ -9,15 +9,13 @@
 class C : public Node{
     using Node::Node;
 
-    private:
-        int waitingForAck = 0;
+private:
+    int waitingForAck = 0;
 
-    public:
-        int run() override;
-        int sendMessage(std::string ip_dest, std::string port_dest, int type, std::string message) override;
-        void addConnection(std::string ip, std::string port);
-
-    int socketDescriptor;
+public:
+    int run() override;
+    int sendMessage(std::string ip_dest, std::string port_dest, int type, std::string message) override;
+    void addConnection(std::string ip, std::string port);
 };
 
 

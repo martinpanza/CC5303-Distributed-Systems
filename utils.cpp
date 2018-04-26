@@ -3,8 +3,7 @@
 //
 #include "utils.h"
 
-size_t splitString(const std::string &txt, std::vector<std::string> &strs, char ch)
-{
+size_t splitString(const std::string &txt, std::vector<std::string> &strs, char ch) {
     size_t pos = txt.find( ch );
     size_t initialPos = 0;
     strs.clear();

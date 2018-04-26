@@ -15,7 +15,7 @@
 #include <thread>
 
 
-void acceptTh(int sd) {
+void acceptTh(Node n, int sd) {
     while(1){
         int new_socket;
         struct sockaddr_in address;
@@ -39,33 +39,33 @@ void acceptTh(int sd) {
 
 }
 
-void sendTh(Node* n) {
-    unsigned char* packet;
-    std::string ip;
-    std::string port;
-    std::string name;
-    while(1){
+void receiveTh(Node *n, int sd){
+    char buffer[1024] = {0};
+    int valread = 1;
+    while (1) {
+        valread = read(sd, buffer, 1024);
         n->mtx.lock();
-        if (!n->message_queue.empty()){
-            packet = n->message_queue.front();
-            n->message_queue.pop_front();
-            n->mtx.unlock();
-            ip = n->getDestIp(packet);
-            port = n->getDestPort(packet);
-            name = ip + ":" + port;
-        }
+        n->message_queue.push_back(buffer);
+        n->mtx.unlock();
+        // printf("%s\n", buffer);
     }
 }
 
-void receiveTh(Node* n, int sd){
-    char buffer[1024] = {0};
-    int valread = 1;
-    while(1){
-        valread = read(sd, buffer, 1024);
-        printf("%s\n", buffer);
+void sendTh(Node *n) {
+    unsigned char* packet;
+    std::string name;
+    std::vector usefulRouters;
+    while (1) {
         n->mtx.lock();
-        //n->message_queue.push_back(buffer);
-        n->mtx.unlock();
+        if (!n->message_queue.empty()) {
+            packet = n->message_queue.front();
+            n->message_queue.pop_front();
+            n->mtx.unlock();
+            name = n->getDestIp(packet) + ":" + n->getDestPort(packet);
+            usefulRouters = n->searchConnectedRouter(name);
+        } else {
+            n->mtx.unlock();
+        }
     }
 }
 

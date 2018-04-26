@@ -30,6 +30,8 @@ public:
     std::deque<unsigned char*> message_queue;
     int connectionIndex = 0;
     std::vector<std::pair<int, std::string>> socketDescriptors;
+
+    std::vector<std::string> searchConnectedRouter(std::string name);
     explicit Node(std::string ip, uint16_t port, std::string name);
     virtual int receivePacket(char* p);
     virtual void receiveTablePacket();

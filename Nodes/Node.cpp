@@ -166,6 +166,19 @@ unsigned char* Node::makePacket(std::string ip_dest, std::string port_dest, int 
     return packet;
 }
 
+std::vector<std::string> Node::searchConnectedRouter(std::string name) {
+    std::vector<std::string> usefulRouters;
+    std::vector<std::pair<std::string, std::vector<std::string>>>* reachable_clients =
+            (this->getTable())->getReachableClients();
+    for (int i = 0; i < reachable_clients->size(); i++) {
+        if ((*reachable_clients)[i].first == name) {
+            usefulRouters = (*reachable_clients)[i].second;
+            break;
+        }
+    }
+    return usefulRouters;
+}
+
 std::pair<char *, char *> Node::fragment(size_t packet, int MTU) {
     //TODO: reduce size of packet to MTU size, and return both new packets
     return {};
@@ -173,13 +186,13 @@ std::pair<char *, char *> Node::fragment(size_t packet, int MTU) {
 
 void Node::sendNextPacket() {
     //TODO: Modificar para que se traiga un vector con todas las rutas UTILES de acuerdo al destino del paquete
-    char* packet = this->message_queue.back();
+    unsigned char* packet = this->message_queue.back();
     this->message_queue.pop_back();
 
     int connection_mtu = this->connections[this->connectionIndex].second.second;
-
+    /*
     if (sizeof(packet) > connection_mtu){
-        std::pair<char*, char*> fragmentedPackets = fragment(sizeof(packet), connection_mtu);
+        std::pair<unsigned char*, unsigned char*> fragmentedPackets = fragment(sizeof(packet), connection_mtu);
         packet = fragmentedPackets.first;
         this->message_queue.push_back(fragmentedPackets.second);
     }
@@ -187,7 +200,7 @@ void Node::sendNextPacket() {
     //TODO: send through this->connections[this->connectionIndex];
 
     this->connectionIndex = (int) ((this->connectionIndex + 1) % this->connections.size());
-
+    */
 }
 
 

@@ -8,6 +8,7 @@
 #include "../utils.h"
 #include <arpa/inet.h>
 #include <thread>
+#include <vector>
 
 void C::addConnection(std::string ip, std::string port) {
     this->connections.push_back(std::pair<std::string, std::pair<int, int>>(ip + ":" + port , std::pair<int, int>(1,512)));
@@ -24,7 +25,7 @@ int C::sendMessage(std::string ip_dest, std::string port_dest, int type, std::st
 int C::run() {
     int server_fd = serverSocket(this->port);
 
-    std::thread accepter (acceptTh, *this, server_fd);
+    std::thread accepter (acceptTh, this, server_fd);
     accepter.detach();
 
     std::string s;
@@ -40,7 +41,7 @@ int C::run() {
             this->addConnection(words[1], words[2]);
             this->socketDescriptors.push_back(std::pair<int, std::string>(client_sd, words[1] + ":" + words[2]));
 
-            std::thread receiver (receiveTh, client_sd);
+            std::thread receiver (receiveTh, this, client_sd);
             receiver.detach();
 
 

@@ -27,7 +27,7 @@ int random_mtu() {
 int T::run() {
     int server_fd = serverSocket(this->port);
 
-    std::thread accepter (acceptTh, server_fd);
+    std::thread accepter (acceptTh, this, server_fd);
     accepter.detach();
 
     std::thread sender (sendTh, this);
@@ -45,7 +45,7 @@ int T::run() {
             this->addConnection(words[1], words[2], words[3]);
             this->socketDescriptors.push_back(std::pair<int, std::string>(client_sd, words[1] + ":" + words[2]));
 
-            std::thread receiver (receiveTh, client_sd);
+            std::thread receiver (receiveTh, this ,client_sd);
             receiver.detach();
         }
     }

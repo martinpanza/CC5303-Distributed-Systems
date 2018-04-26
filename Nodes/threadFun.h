@@ -9,6 +9,6 @@
 
 #include "C.h"
 
-void acceptTh(int sd);
-void receiveTh(int);
+void acceptTh(Node *n, int sd);
+void receiveTh(Node *n, int sd);
 void sendTh(Node* n);

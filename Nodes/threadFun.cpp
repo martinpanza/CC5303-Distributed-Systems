@@ -15,7 +15,7 @@
 #include <thread>
 
 
-void acceptTh(Node n, int sd) {
+void acceptTh(Node* n, int sd) {
     while(1){
         int new_socket;
         struct sockaddr_in address;
@@ -33,14 +33,14 @@ void acceptTh(Node n, int sd) {
 
         std::cout << "connnection established with " << ip << ":" << port << std::endl;
 
-        std::thread receiver (receiveTh, new_socket);
+        std::thread receiver (receiveTh, n, new_socket);
         receiver.detach();
     }
 
 }
 
 void receiveTh(Node *n, int sd){
-    char buffer[1024] = {0};
+    unsigned char buffer[1024] = {0};
     int valread = 1;
     while (1) {
         valread = read(sd, buffer, 1024);
@@ -54,14 +54,14 @@ void receiveTh(Node *n, int sd){
 void sendTh(Node *n) {
     unsigned char* packet;
     std::string name;
-    std::vector usefulRouters;
+    std::vector<std::string> usefulRouters;
     while (1) {
         n->mtx.lock();
         if (!n->message_queue.empty()) {
             packet = n->message_queue.front();
             n->message_queue.pop_front();
             n->mtx.unlock();
-            name = n->getDestIp(packet) + ":" + n->getDestPort(packet);
+            name = n->getDestIp(packet) + ":" + std::to_string(n->getDestPort(packet));
             usefulRouters = n->searchConnectedRouter(name);
         } else {
             n->mtx.unlock();

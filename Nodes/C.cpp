@@ -12,12 +12,13 @@
 
 void C::addConnection(std::string ip, std::string port) {
     this->connections.push_back(std::pair<std::string, std::pair<int, int>>(ip + ":" + port , std::pair<int, int>(1,512)));
+    this->getTable()->direct_routers.push_back(ip + ":" + port);
 }
 
 int C::sendMessage(std::string ip_src, std::string port_src, std::string ip_dest, std::string port_dest, int type, std::string message, int sd) {
     std::cout << "sending message..." << std::endl;
     unsigned char* packet = this->makePacket(std::move(ip_src), std::move(port_src), std::move(ip_dest), std::move(port_dest), type, message);
-    auto totalLength = (int) this->getTotalLength(packet);
+    auto totalLength = (size_t) this->getTotalLength(packet);
     std::cout << this->getMessage(packet) << std::endl;
     std::cout << totalLength << std::endl;
 

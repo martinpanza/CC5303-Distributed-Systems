@@ -100,7 +100,7 @@ std::string Node::getMessage(const unsigned char* packet) {
     uint16_t total_length = this->getTotalLength(packet);
     int data_length = total_length - HEADER_SIZE;
     char message[data_length];
-    substring(HEADER_SIZE, (size_t) data_length,(const char*)packet, message, total_length);
+    substring(HEADER_SIZE, (size_t) total_length,(const char*)packet, message, total_length);
     return std::string(message);
 }
 
@@ -177,7 +177,6 @@ std::vector<std::string> Node::searchConnectedRouter(std::string name) {
 
     std::vector<std::string>* direct_clients =
             (this->getTable())->getDirectClients();
-    std::cout << direct_clients->empty() << std::endl;
     for (int i = 0; i < direct_clients->size(); i++) {
         if ((*direct_clients)[i] == name) {
             usefulRouters = std::vector<std::string>();
@@ -189,7 +188,6 @@ std::vector<std::string> Node::searchConnectedRouter(std::string name) {
 
     std::vector<std::pair<std::string, std::vector<std::string>>>* reachable_clients =
             (this->getTable())->getReachableClients();
-    std::cout << reachable_clients->empty() << std::endl;
     for (int i = 0; i < reachable_clients->size(); i++) {
         if ((*reachable_clients)[i].first == name) {
             usefulRouters = (*reachable_clients)[i].second;

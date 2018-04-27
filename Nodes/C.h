@@ -1,6 +1,7 @@
 //
 // Created by marti on 19-04-2018.
 //
+#include <condition_variable>
 #include "Node.h"
 #ifndef CC5303_DISTRIBUTED_SYSTEMS_C_H
 #define CC5303_DISTRIBUTED_SYSTEMS_C_H

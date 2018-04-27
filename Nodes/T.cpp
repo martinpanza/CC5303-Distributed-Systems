@@ -5,7 +5,7 @@
 #include "T.h"
 #include <random>
 #include "socket.h"
-#include "threadFun.h"
+#include "ThreadFun.h"
 #include <thread>
 
 int random_int(int min, int max) {

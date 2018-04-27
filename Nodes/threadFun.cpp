@@ -95,6 +95,9 @@ void sendTh(Node *n) {
 
 void cProcessTh(Node *n, int sd) {
     unsigned char* packet;
+    std::string ip;
+    std::string port;
+    std::string name;
     while (1){
         (n->mtx).lock();
         if (!n->message_queue.empty()){
@@ -102,8 +105,11 @@ void cProcessTh(Node *n, int sd) {
             (n->message_queue).pop_front();
             (n->mtx).unlock();
             if (n->getType(packet) == CHAT_MESSAGE){
-                std::cout << "llego mensaje de " << n->getSrcPort(packet) << " : " << n->getMessage(packet) << std::endl;
-                //TODO:send ACK
+                ip = n->getSrcIp(packet);
+                port = n->getSrcPort(packet);
+                name = ip + ":" + port;
+                std::cout << "llego mensaje de " << port << " : " << n->getMessage(packet) << std::endl;
+                n->sendMessage(ip, port, ACK_MESSAGE, "", n->getSocketDescriptor(name));
             } else{
                 //TODO: es ACK y desbloquea nodo
             }

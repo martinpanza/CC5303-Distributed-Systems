@@ -170,6 +170,19 @@ unsigned char* Node::makePacket(std::string ip_dest, std::string port_dest, int 
 
 std::vector<std::string> Node::searchConnectedRouter(std::string name) {
     std::vector<std::string> usefulRouters;
+
+    std::vector<std::string>* direct_clients =
+            (this->getTable())->getDirectClients();
+    std::cout << direct_clients->empty() << std::endl;
+    for (int i = 0; i < direct_clients->size(); i++) {
+        if ((*direct_clients)[i] == name) {
+            usefulRouters = std::vector<std::string>();
+            usefulRouters.push_back(name);
+            return usefulRouters;
+        }
+    }
+
+
     std::vector<std::pair<std::string, std::vector<std::string>>>* reachable_clients =
             (this->getTable())->getReachableClients();
     std::cout << reachable_clients->empty() << std::endl;
@@ -179,18 +192,6 @@ std::vector<std::string> Node::searchConnectedRouter(std::string name) {
             break;
         }
     }
-
-    std::vector<std::string>* direct_clients =
-            (this->getTable())->getDirectClients();
-    std::cout << direct_clients->empty() << std::endl;
-    for (int i = 0; i < direct_clients->size(); i++) {
-        if ((*direct_clients)[i] == name) {
-            usefulRouters = std::vector<std::string>();
-            usefulRouters.push_back(name);
-            break;
-        }
-    }
-
 
     return usefulRouters;
 }

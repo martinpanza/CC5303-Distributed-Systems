@@ -68,8 +68,7 @@ void receiveTh(Node *n, int sd){
 void sendTh(Node *n) {
     unsigned char* packet;
     std::string name;
-    std::string ip;
-    std::string port;
+    std::string ip_src, port_src, ip_dest, port_dest;
     std::vector<std::string> usefulRouters;
     while (1) {
         (n->mtx).lock();
@@ -77,14 +76,16 @@ void sendTh(Node *n) {
             packet = (n->message_queue).front();
             (n->message_queue).pop_front();
             (n->mtx).unlock();
-            ip = n->getDestIp(packet);
-            port = std::to_string(n->getDestPort(packet));
-            name = ip + ":" + port;
+            ip_src = n->getSrcIp(packet);
+            port_src = std::to_string(n->getSrcPort(packet));
+            ip_dest = n->getDestIp(packet);
+            port_dest = std::to_string(n->getDestPort(packet));
+            name = ip_dest + ":" + port_dest;
             std::cout << "Searching for Routers..." << std::endl;
             usefulRouters = n->searchConnectedRouter(name);
             std::cout << "mensaje extraido: " << usefulRouters.front() << std::endl;
             int sd = n->getSocketDescriptor(usefulRouters.front());
-            n->sendMessage(ip, port, n->getType(packet), n->getMessage(packet), sd);
+            n->sendMessage(ip_src, port_src, ip_dest, port_dest, n->getType(packet), n->getMessage(packet), sd);
             std::cout << "mensaje enviado: " << std::endl;
         } else {
             (n->mtx).unlock();

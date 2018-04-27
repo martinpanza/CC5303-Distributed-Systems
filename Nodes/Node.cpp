@@ -58,9 +58,19 @@ uint16_t Node::getOffset(const unsigned char* packet) {
     return packet[17] | uint16_t(packet[16]) << 8;
 }
 
+void Node::setOffset(unsigned char* packet, uint16_t offset) {
+    packet[16] = (unsigned char) (offset >> 8);
+    packet[17] = (unsigned char) (offset & 0xFF);
+}
+
 int Node::getLastBit(const unsigned char* packet) {
     return (int) packet[15];
 }
+
+void Node::setLastBit(unsigned char* packet, int lastBit) {
+    packet[15] = lastBit;
+}
+
 
 int Node::getType(const unsigned char* packet) {
     return (int) packet[12];
@@ -68,6 +78,10 @@ int Node::getType(const unsigned char* packet) {
 
 int Node::getFragmentBit(const unsigned char* packet) {
     return (int) packet[18];
+}
+
+void Node::setFragmentBit(unsigned char* packet, int fragmentBit) {
+    packet[18] = fragmentBit;
 }
 
 std::string Node::getSrcIp(const unsigned char* packet) {
@@ -104,6 +118,8 @@ std::string Node::getMessage(const unsigned char* packet) {
     return std::string(message);
 }
 
+
+
 void Node::printPacket(const unsigned char* packet) {
     std::cout << "Src IP: "<< this->getSrcIp(packet) << std::endl;
     std::cout << "Src Port: "<< this->getSrcPort(packet) << std::endl;
@@ -116,6 +132,37 @@ void Node::printPacket(const unsigned char* packet) {
     std::cout << "Last: "<< this->getLastBit(packet) << std::endl;
     std::cout << "Message: "<< this->getMessage(packet) << std::endl;
 }
+
+std::pair<unsigned char *, unsigned char*> Node::fragment(unsigned char* packet, int MTU) {
+    std::string ip_src = this->getSrcIp(packet), ip_dest= this->getDestIp(packet);
+    std::string port_src = std::to_string(this->getSrcPort(packet)),
+            port_dest = std::to_string(this->getDestPort(packet));
+    int type = this->getType(packet);
+    uint16_t original_offset = this->getOffset(packet);
+    std::string message = this->getMessage(packet);
+
+    int top_message_size = MTU - HEADER_SIZE;
+    int bot_message_size = (int) message.length() - MTU - HEADER_SIZE;
+
+    std::string top_message = message.substr(0, (unsigned long) top_message_size),
+            bot_message = message.substr(0, (unsigned long) bot_message_size);
+
+
+    unsigned char* top_packet = this->makePacket(ip_src, port_src, ip_dest, port_dest, type, top_message);
+    unsigned char* bot_packet = this->makePacket(ip_dest, port_dest, ip_dest, port_dest, type, bot_message);
+
+    this->setFragmentBit(top_packet, 1);
+    this->setFragmentBit(bot_packet, 1);
+    this->setLastBit(top_packet, 0);
+    this->setLastBit(bot_packet, 1);
+
+    uint16_t bot_packet_offset = original_offset + (uint16_t) top_message_size;
+    this->setOffset(top_packet, original_offset);
+    this->setOffset(bot_packet, bot_packet_offset);
+
+    return std::pair(top_packet, bot_packet);
+}
+
 
 unsigned char* Node::makePacket(std::string ip_src, std::string port_src, std::string ip_dest,
                                 std::string port_dest, int type, std::string message) {

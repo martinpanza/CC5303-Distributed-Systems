@@ -14,7 +14,6 @@
 #include <string.h>
 #include "../utils.h"
 #include <thread>
-#include <sgtty.h>
 
 
 void acceptTh(Node *n, int sd) {
@@ -83,7 +82,7 @@ void sendTh(Node *n) {
 
             std::cout << "Searching for Routers..." << std::endl;
             usefulRouters = n->searchConnectedRouter(name);
-
+            // AQUI SE FRAGMENTA, SE SACA UN PEDAZO QUE QUEPA Y LO OTRO SE METE DENUEVO A LA COLA
             int sd = n->getSocketDescriptor(usefulRouters.front());
 
             sleep(n->getDelay(name));
@@ -114,7 +113,7 @@ void cProcessTh(Node *n, int sd) {
                 sleep(n->connections.front().second.first);
                 n->sendMessage(n->ip, std::to_string(n->port), ip, port, ACK_MESSAGE, std::string(""), n->getSocketDescriptor(n->getTable()->direct_routers.front()));
             } else {
-                std::cout << "llego Ack" << std::endl;
+                std::cout << "Su mensaje ha sido recibido" << std::endl;
                 n->cond.notify_one();
             }
         } else{

@@ -7,6 +7,7 @@
 Node* node;
 
 int main(int argc, char* argv[]) {
+
     if (argc < 4) {
         std::cerr << "Usage: " << argv[0] << " T/C" << " ip" << " port" << " name" << std::endl;
         return 1;

@@ -111,10 +111,9 @@ void cProcessTh(Node *n, int sd) {
                 std::cout << "llego mensaje de " << name << "->" << n->getMessage(packet) << std::endl;
                 std::cout << n->getTable()->direct_routers.front() << std::endl;
                 n->sendMessage(n->ip, std::to_string(n->port), ip, port, ACK_MESSAGE, std::string(""), n->getSocketDescriptor(n->getTable()->direct_routers.front()));
-                //TODO: bloquear C
             } else {
                 std::cout << "llego Ack" << std::endl;
-                //TODO: liberar C
+                n->cond.notify_one();
             }
         } else{
             (n->mtx).unlock();

@@ -65,6 +65,10 @@ int C::run() {
             m += words[words.size() - 1];
             this->sendMessage(this->ip, std::to_string(this->port), words[1], words[2], CHAT_MESSAGE, m, client_sd);
             printf("Message sent\n");
+
+            std::unique_lock<std::mutex> lk(this->listen_mutex);
+            this->cond.wait(lk);
+            lk.unlock();
         }
     }
 }

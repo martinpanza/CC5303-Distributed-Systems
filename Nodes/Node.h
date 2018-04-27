@@ -7,6 +7,7 @@
 #include <deque>
 #include "../utils.h"
 #include <mutex>
+#include <condition_variable>
 
 #define ACK_MESSAGE 1
 #define CHAT_MESSAGE 2
@@ -22,6 +23,8 @@ class Node {
 
 public:
     std::mutex mtx;
+    std::mutex listen_mutex;
+    std::condition_variable cond;
     Table table;
     std::string ip;
     uint16_t port;

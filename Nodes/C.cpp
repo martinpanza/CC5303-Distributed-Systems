@@ -45,7 +45,7 @@ int C::run() {
             words[1] = "127.0.0.1";
         }
         // cliente necesita tener tipo? solo se conecta a otros T
-        if (words[0] == connect_ and words.size() == 3) {
+        if (words[0] == connect_ and words.size() >= 3) {
             client_sd = clientSocket(stoi(words[2]));
 
             this->addConnection(words[1], words[2]);
@@ -56,7 +56,7 @@ int C::run() {
 
 
         } else if (words[0] == message_ and words.size() >= 4) {
-            std::string m;
+            std::string m = "";
             for (int i = 3; i < words.size() - 1; i++) {
                 m += words[i];
                 m += ' ';

@@ -77,7 +77,7 @@ void sendTh(Node *n) {
             (n->message_queue).pop_front();
             (n->mtx).unlock();
             ip_src = n->getSrcIp(packet);
-            port_src = n->getSrcPort(packet);
+            port_src = std::to_string(n->getSrcPort(packet));
             ip_dest = n->getDestIp(packet);
             port_dest = std::to_string(n->getDestPort(packet));
             name = ip_dest + ":" + port_dest;

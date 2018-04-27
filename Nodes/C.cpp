@@ -4,7 +4,7 @@
 
 #include "C.h"
 #include "socket.h"
-#include "threadFun.h"
+#include "ThreadFun.h"
 #include "../utils.h"
 #include <arpa/inet.h>
 #include <thread>

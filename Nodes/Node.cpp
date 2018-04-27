@@ -29,13 +29,16 @@ int Node::receivePacket(char* p) {
     return 0;
 }
 
-int Node::sendMessage(std::string ip_src, std::string port_src, std::string ip_dest, std::string port_dest, int type, std::string message, int sd) {
+int Node::sendMessage(const std::string ip_src, const std::string port_src,
+                      const std::string ip_dest, const std::string port_dest,
+                      const int type, const std::string message, const int sd) {
+    std::cout << ip_src << ":" << port_src << std::endl;
     std::cout << ip_dest << ":" << port_dest << " " << type << " " << message;
     return 0;
 }
 
 void Node::receiveTablePacket() {
-    return;
+
 }
 
 Table* Node::getTable() {
@@ -68,7 +71,7 @@ int Node::getLastBit(const unsigned char* packet) {
 }
 
 void Node::setLastBit(unsigned char* packet, int lastBit) {
-    packet[15] = lastBit;
+    packet[15] = (unsigned char) lastBit;
 }
 
 
@@ -81,7 +84,7 @@ int Node::getFragmentBit(const unsigned char* packet) {
 }
 
 void Node::setFragmentBit(unsigned char* packet, int fragmentBit) {
-    packet[18] = fragmentBit;
+    packet[18] = (unsigned char) fragmentBit;
 }
 
 std::string Node::getSrcIp(const unsigned char* packet) {
@@ -160,7 +163,7 @@ std::pair<unsigned char *, unsigned char*> Node::fragment(unsigned char* packet,
     this->setOffset(top_packet, original_offset);
     this->setOffset(bot_packet, bot_packet_offset);
 
-    return std::pair(top_packet, bot_packet);
+    return {top_packet, bot_packet};
 }
 
 
@@ -243,11 +246,6 @@ std::vector<std::string> Node::searchConnectedRouter(std::string name) {
     }
 
     return usefulRouters;
-}
-
-std::pair<unsigned char *, unsigned char *> Node::fragment(unsigned char * packet, int MTU) {
-    //TODO: reduce size of packet to MTU size, and return both new packets
-    return {};
 }
 
 void Node::sendNextPacket() {

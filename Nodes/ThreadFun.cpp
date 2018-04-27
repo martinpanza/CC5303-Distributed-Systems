@@ -72,7 +72,6 @@ void sendTh(Node *n) {
         if (!n->message_queue.empty()) {
             packet = (n->message_queue).front();
             (n->message_queue).pop_front();
-            (n->mtx).unlock();
 
             ip_src = n->getSrcIp(packet);
             port_src = std::to_string(n->getSrcPort(packet));
@@ -82,7 +81,6 @@ void sendTh(Node *n) {
 
             std::cout << "Searching for Routers..." << std::endl;
             usefulRouters = n->searchConnectedRouter(name);
-            // AQUI SE FRAGMENTA, SE SACA UN PEDAZO QUE QUEPA Y LO OTRO SE METE DENUEVO A LA COLA
             int sd = n->getSocketDescriptor(usefulRouters.front());
 
             if (n->getTotalLength(packet) > n->getMTU(name)){
@@ -91,6 +89,7 @@ void sendTh(Node *n) {
                 n->message_queue.push_front(f_packets.second);
             }
 
+            (n->mtx).unlock();
             sleep(n->getDelay(name));
             send(sd, packet, n->getTotalLength(packet), 0);
         } else {

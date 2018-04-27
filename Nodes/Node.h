@@ -59,15 +59,13 @@ public:
     unsigned char* makePacket(std::string ip_src, std::string port_src, std::string ip_dest,
                               std::string port_dest, int type, std::string message);
     void sendNextPacket();
-    std::pair<unsigned char *, unsigned char*> fragment(unsigned char* packet, int MTU);
     virtual int sendMessage(std::string ip_src, std::string port_src, std::string ip_dest, std::string port_dest, int type, std::string message, int sd);
     int getSocketDescriptor(std::string basic_string);
-
     int getDelay(std::string basic_string);
 
     int getMTU(std::string name);
+    std::pair<unsigned char *, unsigned char*> fragment(unsigned char* packet, int MTU);
 
-    std::pair<unsigned char *, unsigned char *> fragment(unsigned char *packet, int MTU);
 };
 
 

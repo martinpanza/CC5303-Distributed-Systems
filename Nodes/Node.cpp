@@ -198,7 +198,7 @@ std::vector<std::string> Node::searchConnectedRouter(std::string name) {
     return usefulRouters;
 }
 
-std::pair<char *, char *> Node::fragment(size_t packet, int MTU) {
+std::pair<unsigned char *, unsigned char *> Node::fragment(unsigned char * packet, int MTU) {
     //TODO: reduce size of packet to MTU size, and return both new packets
     return {};
 }
@@ -236,6 +236,16 @@ int Node::getDelay(std::string name) {
     for (int i = 0; i <  c.size(); i++){
         if (c[i].first == name){
             return c[i].second.first;
+        }
+    }
+    return 0;
+}
+
+int Node::getMTU(std::string name) {
+    std::vector<std::pair<std::string, std::pair<int,int>>> c = this->connections;
+    for (int i = 0; i <  c.size(); i++){
+        if (c[i].first == name){
+            return c[i].second.second;
         }
     }
     return 0;

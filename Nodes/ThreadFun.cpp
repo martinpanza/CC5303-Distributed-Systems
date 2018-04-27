@@ -85,6 +85,12 @@ void sendTh(Node *n) {
             // AQUI SE FRAGMENTA, SE SACA UN PEDAZO QUE QUEPA Y LO OTRO SE METE DENUEVO A LA COLA
             int sd = n->getSocketDescriptor(usefulRouters.front());
 
+            if (n->getTotalLength(packet) > n->getMTU(name)){
+                std::pair<unsigned char *, unsigned char*> f_packets = n->fragment(packet, n->getMTU(name));
+                packet = f_packets.first;
+                n->message_queue.push_front(f_packets.second);
+            }
+
             sleep(n->getDelay(name));
             send(sd, packet, n->getTotalLength(packet), 0);
         } else {

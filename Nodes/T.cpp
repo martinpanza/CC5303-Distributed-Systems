@@ -173,7 +173,7 @@ void T::addConnection(std::string ip, std::string port, std::string type) {
 }
 
 int T::sendMessage(std::string ip_dest, std::string port_dest, int type, std::string message, int sd) {
-    std::cout << "send message" << std::endl;
+    std::cout << "sending message..." << std::endl;
     unsigned char* packet = this->makePacket(std::move(ip_dest), std::move(port_dest), type, message);
     auto totalLength = (size_t) this->getTotalLength(packet);
     send(sd, packet, totalLength, 0);

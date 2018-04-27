@@ -124,12 +124,9 @@ unsigned char* Node::makePacket(std::string ip_dest, std::string port_dest, int 
     splitString(this->ip, ip, '.');
     splitString(ip_dest, ip_d, '.');
     // Source IP
-    std::cout << "here1" << std::endl;
     for (int i = 0; i < ip.size(); i++) {
-        std::cout <<  ip[i] << std::endl;
         packet[i] = (unsigned char)(stoi(ip[i]));
     }
-    std::cout << "here2" << std::endl;
 
 
     // Source port
@@ -139,14 +136,11 @@ unsigned char* Node::makePacket(std::string ip_dest, std::string port_dest, int 
 
     // Destination IP
     for (int i = 0; i < ip_d.size(); i++) {
-        std::cout <<  ip_d[i] << std::endl;
         packet[i + 6] = (unsigned char)(stoi(ip_d[i]));
     }
-    std::cout << "here2" << std::endl;
 
     // Destination port
     auto dport = (uint16_t) stoi(port_dest);
-    std::cout << "here2" << std::endl;
     packet[10] = (unsigned char) (dport >> 8); // hi
     packet[11] = (unsigned char) (dport & 0xFF); // lo
 
@@ -178,12 +172,26 @@ std::vector<std::string> Node::searchConnectedRouter(std::string name) {
     std::vector<std::string> usefulRouters;
     std::vector<std::pair<std::string, std::vector<std::string>>>* reachable_clients =
             (this->getTable())->getReachableClients();
+    std::cout << reachable_clients->empty() << std::endl;
     for (int i = 0; i < reachable_clients->size(); i++) {
         if ((*reachable_clients)[i].first == name) {
             usefulRouters = (*reachable_clients)[i].second;
             break;
         }
     }
+
+    std::vector<std::string>* direct_clients =
+            (this->getTable())->getDirectClients();
+    std::cout << direct_clients->empty() << std::endl;
+    for (int i = 0; i < direct_clients->size(); i++) {
+        if ((*direct_clients)[i] == name) {
+            usefulRouters = std::vector<std::string>();
+            usefulRouters.push_back(name);
+            break;
+        }
+    }
+
+
     return usefulRouters;
 }
 

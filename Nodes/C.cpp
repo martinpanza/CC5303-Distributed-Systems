@@ -15,17 +15,13 @@ void C::addConnection(std::string ip, std::string port) {
 }
 
 int C::sendMessage(std::string ip_dest, std::string port_dest, int type, std::string message, int sd) {
-    std::cout << "send message" << std::endl;
+    std::cout << "sending message..." << std::endl;
     unsigned char* packet = this->makePacket(std::move(ip_dest), std::move(port_dest), type, message);
-    auto totalLength = (size_t) this->getTotalLength(packet);
-    std::cout << "saliendo de C" << std::endl;
+    auto totalLength = (int) this->getTotalLength(packet);
     std::cout << this->getMessage(packet) << std::endl;
     std::cout << totalLength << std::endl;
 
-
-    //char* packet2 = "hola!";
     send(sd, packet, totalLength, 0);
-    std::cout << "salio de C" << std::endl;
     return 0;
 }
 

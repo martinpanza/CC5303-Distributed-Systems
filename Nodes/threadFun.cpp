@@ -32,7 +32,7 @@ void acceptTh(Node *n, int sd) {
         std::string ip = inet_ntoa(address.sin_addr);
         std::string port = std::to_string(ntohs(address.sin_port));
 
-        std::cout << "connnection established with " << ip << ":" << port << std::endl;
+        std::cout << "connnection established" << std::endl;
 
         std::thread receiver (receiveTh, n, new_socket);
         receiver.detach();
@@ -40,22 +40,28 @@ void acceptTh(Node *n, int sd) {
 
 }
 
+void copyBuffer(char* buffer, char** to, int size) {
+    for (int i = 0; i < size; i++) {
+        (*to)[i] = (unsigned char) buffer[i];
+    }
+}
+
 void receiveTh(Node *n, int sd){
     char buffer[1024] = {0};
     int valread = 1;
     while (valread > 0) {
         valread = read(sd, buffer, 1024);
-        std::cout << "mensaje recibido: " << valread << std::endl;
-        auto to = (char*) malloc(valread * sizeof(char));
-        strncpy(to, buffer, valread);
-        std::cout << "mensaje transformado: " << n->getMessage((unsigned char*)buffer) << std::endl;
-        n->printPacket((unsigned char*)buffer);
+
+        char * to = (char *)malloc(valread * sizeof(char));
+
+        //unsigned char* to = (unsigned char *)malloc(valread * sizeof(unsigned char));
+        //strncpy(to, buffer, valread);
+        copyBuffer(buffer, &to, valread);
+        n->printPacket((unsigned char*)to);
 
         (n->mtx).lock();
         (n->message_queue).push_back((unsigned  char*)to);
-        std::cout << n->getMessage(n->message_queue.back()) << std::endl;
         (n->mtx).unlock();
-        // printf("%s\n", buffer);
     }
 }
 
@@ -74,9 +80,12 @@ void sendTh(Node *n) {
             ip = n->getDestIp(packet);
             port = std::to_string(n->getDestPort(packet));
             name = ip + ":" + port;
+            std::cout << "Searching for Routers..." << std::endl;
             usefulRouters = n->searchConnectedRouter(name);
+            std::cout << "mensaje extraido: " << usefulRouters.front() << std::endl;
             int sd = n->getSocketDescriptor(usefulRouters.front());
             n->sendMessage(ip, port, n->getType(packet), n->getMessage(packet), sd);
+            std::cout << "mensaje enviado: " << std::endl;
         } else {
             (n->mtx).unlock();
         }
@@ -93,7 +102,7 @@ void cProcessTh(Node *n, int sd) {
             (n->message_queue).pop_front();
             (n->mtx).unlock();
             if (n->getType(packet) == CHAT_MESSAGE){
-                std::cout << "llego mensaje de " << n->getDestPort(packet) << " : " << n->getMessage(packet);
+                std::cout << "llego mensaje de " << n->getSrcPort(packet) << " : " << n->getMessage(packet) << std::endl;
                 //TODO:send ACK
             } else{
                 //TODO: es ACK y desbloquea nodo

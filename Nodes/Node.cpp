@@ -29,7 +29,7 @@ int Node::receivePacket(char* p) {
     return 0;
 }
 
-int Node::sendMessage(std::string ip_dest, std::string port_dest, int type, std::string message, int sd) {
+int Node::sendMessage(std::string ip_src, std::string port_src, std::string ip_dest, std::string port_dest, int type, std::string message, int sd) {
     std::cout << ip_dest << ":" << port_dest << " " << type << " " << message;
     return 0;
 }
@@ -117,21 +117,25 @@ void Node::printPacket(const unsigned char* packet) {
     std::cout << "Message: "<< this->getMessage(packet) << std::endl;
 }
 
-unsigned char* Node::makePacket(std::string ip_dest, std::string port_dest, int type, std::string message) {
+unsigned char* Node::makePacket(std::string ip_src, std::string port_src, std::string ip_dest,
+                                std::string port_dest, int type, std::string message) {
     auto packet = (unsigned char*) malloc((HEADER_SIZE + message.length()) * sizeof(unsigned char));
 
     std::vector<std::string> ip, ip_d;
-    splitString(this->ip, ip, '.');
+    //splitString(this->ip, ip, '.');
+    splitString(ip_src, ip, '.');
     splitString(ip_dest, ip_d, '.');
     // Source IP
     for (int i = 0; i < ip.size(); i++) {
         packet[i] = (unsigned char)(stoi(ip[i]));
     }
 
-
     // Source port
-    packet[4] = (unsigned char) (this->port >> 8); // hi
-    packet[5] = (unsigned char) (this->port & 0xFF); // lo
+    auto sport = (uint16_t) stoi(port_src);
+    //packet[4] = (unsigned char) (this->port >> 8); // hi
+    //packet[5] = (unsigned char) (this->port & 0xFF); // lo
+    packet[4] = (unsigned char) (sport >> 8); // hi
+    packet[5] = (unsigned char) (sport & 0xFF); // lo
 
 
     // Destination IP

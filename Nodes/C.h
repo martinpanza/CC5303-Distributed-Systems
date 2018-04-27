@@ -14,7 +14,7 @@ private:
 
 public:
     int run() override;
-    int sendMessage(std::string ip_dest, std::string port_dest, int type, std::string message, int sd) override;
+    int sendMessage(std::string ip_src, std::string port_src, std::string ip_dest, std::string port_dest, int type, std::string message, int sd) override;
     void addConnection(std::string ip, std::string port);
 };
 

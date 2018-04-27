@@ -85,6 +85,8 @@ void sendTh(Node *n) {
             usefulRouters = n->searchConnectedRouter(name);
 
             int sd = n->getSocketDescriptor(usefulRouters.front());
+
+            sleep(n->getDelay(name));
             send(sd, packet, n->getTotalLength(packet), 0);
         } else {
             (n->mtx).unlock();
@@ -109,7 +111,7 @@ void cProcessTh(Node *n, int sd) {
                 port = std::to_string(n->getSrcPort(packet));
                 name = ip + ":" + port;
                 std::cout << "llego mensaje de " << name << "->" << n->getMessage(packet) << std::endl;
-                std::cout << n->getTable()->direct_routers.front() << std::endl;
+                sleep(n->connections.front().second.first);
                 n->sendMessage(n->ip, std::to_string(n->port), ip, port, ACK_MESSAGE, std::string(""), n->getSocketDescriptor(n->getTable()->direct_routers.front()));
             } else {
                 std::cout << "llego Ack" << std::endl;

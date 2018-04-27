@@ -20,8 +20,6 @@ int C::sendMessage(std::string ip_src, std::string port_src, std::string ip_dest
     unsigned char* packet = this->makePacket(std::move(ip_src), std::move(port_src), std::move(ip_dest), std::move(port_dest), type, message);
     auto totalLength = (size_t) this->getTotalLength(packet);
     std::cout << this->getMessage(packet) << std::endl;
-    std::cout << totalLength << std::endl;
-
     send(sd, packet, totalLength, 0);
     return 0;
 }
@@ -63,6 +61,7 @@ int C::run() {
                 m += ' ';
             }
             m += words[words.size() - 1];
+            sleep(this->connections.front().second.first);
             this->sendMessage(this->ip, std::to_string(this->port), words[1], words[2], CHAT_MESSAGE, m, client_sd);
             printf("Message sent\n");
 

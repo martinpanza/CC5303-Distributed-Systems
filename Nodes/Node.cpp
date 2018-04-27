@@ -231,4 +231,14 @@ int Node::getSocketDescriptor(std::string name) {
     return -1;
 }
 
+int Node::getDelay(std::string name) {
+    std::vector<std::pair<std::string, std::pair<int,int>>> c = this->connections;
+    for (int i = 0; i <  c.size(); i++){
+        if (c[i].first == name){
+            return c[i].second.first;
+        }
+    }
+    return 0;
+}
+
 

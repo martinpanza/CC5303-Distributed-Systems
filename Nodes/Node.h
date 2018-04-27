@@ -57,6 +57,8 @@ public:
     void sendNextPacket();
     virtual int sendMessage(std::string ip_src, std::string port_src, std::string ip_dest, std::string port_dest, int type, std::string message, int sd);
     int getSocketDescriptor(std::string basic_string);
+
+    int getDelay(std::string basic_string);
 };
 
 

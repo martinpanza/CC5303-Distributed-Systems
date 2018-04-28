@@ -11,13 +11,12 @@
 #endif
 
 
-Node::Node(std::string ip, uint16_t port, std::string name) {
+Node::Node(std::string ip, uint16_t port) {
     if (ip == "localhost") {
         ip = "127.0.0.1";
     }
     this->ip = std::move(ip);
     this->port = port;
-    this->name = std::move(name);
     this->table = *new Table();
 }
 
@@ -281,25 +280,6 @@ std::vector<std::string> Node::searchConnectedRouter(std::string name) {
     }
 
     return usefulRouters;
-}
-
-void Node::sendNextPacket() {
-    //TODO: Modificar para que se traiga un vector con todas las rutas UTILES de acuerdo al destino del paquete
-    unsigned char* packet = this->message_queue.back();
-    this->message_queue.pop_back();
-
-    int connection_mtu = this->connections[this->connectionIndex].second.second;
-    /*
-    if (sizeof(packet) > connection_mtu){
-        std::pair<unsigned char*, unsigned char*> fragmentedPackets = fragment(sizeof(packet), connection_mtu);
-        packet = fragmentedPackets.first;
-        this->message_queue.push_back(fragmentedPackets.second);
-    }
-
-    //TODO: send through this->connections[this->connectionIndex];
-
-    this->connectionIndex = (int) ((this->connectionIndex + 1) % this->connections.size());
-    */
 }
 
 int Node::getSocketDescriptor(std::string name) {

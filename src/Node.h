@@ -41,7 +41,7 @@ public:
     std::vector<std::pair<int, std::string>> socketDescriptors;
 
     std::vector<std::string> searchConnectedRouter(std::string name);
-    explicit Node(std::string ip, uint16_t port, std::string name);
+    explicit Node(std::string ip, uint16_t port);
     virtual int receivePacket(char* p);
     virtual void receiveTablePacket();
     virtual int run();
@@ -64,7 +64,6 @@ public:
     void printPacket(const unsigned char* packet);
     unsigned char* makePacket(std::string ip_src, std::string port_src, std::string ip_dest,
                               std::string port_dest, int type, std::string message);
-    void sendNextPacket();
     virtual int sendMessage(std::string ip_src, std::string port_src, std::string ip_dest, std::string port_dest, int type, std::string message, int sd);
     int getSocketDescriptor(std::string basic_string);
     int getDelay(std::string basic_string);

@@ -31,3 +31,29 @@ void Table::addReachableClient(std::string name, std::vector<std::string> ways) 
     this->reachable_clients.push_back(p);
 }
 
+void Table::printTable() {
+    std::vector<std::string> direct_clients;
+    std::vector<std::string> direct_routers;
+    // Cliente, <Caminos posibles>
+    std::vector<std::pair<std::string, std::vector<std::string>>> reachable_clients;
+    std::cout << "Direct Clients: ";
+    for (std::string client : direct_clients) {
+        std::cout << client << "; ";
+    }
+    std::cout << std::endl;
+    std::cout << "Direct Routers: ";
+    for (std::string router : direct_routers) {
+        std::cout << router << "; ";
+    }
+    std::cout << std::endl;
+    std::cout << "Reachable Clients: ";
+    for (std::pair<std::string, std::vector<std::string>> conn : reachable_clients) {
+        std::cout << conn.first << ": ";
+        for (std::string rt : conn.second) {
+            std::cout << rt << "; ";
+        }
+        std::cout << std::endl;
+    }
+    std::cout << std::endl;
+}
+

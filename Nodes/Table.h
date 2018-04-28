@@ -17,6 +17,7 @@ public:
     void addDirectClient(std::string name);
     void addDirectRouter(std::string name);
     void addReachableClient(std::string name, std::vector<std::string> ways);
+    void printTable();
 
     std::vector<std::pair<std::string, std::vector<std::string>>>* getReachableClients();
     std::vector<std::string>* getDirectClients();

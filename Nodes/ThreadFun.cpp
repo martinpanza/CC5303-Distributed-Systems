@@ -83,6 +83,7 @@ void sendTh(T *t) {
 
             if (t->getType(packet) == TABLE_MESSAGE){
                 t->processTablePacket(packet);
+                t->getTable()->printTable();
             } else {
 
                 std::cout << "Searching for Routers..." << std::endl;

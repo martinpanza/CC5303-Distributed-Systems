@@ -62,7 +62,7 @@ std::string T::makeTableMessage() {
             (this->getTable())->getReachableClients();
 
     // Add the ones directly connected to this router
-    if ((*direct_clients).empty()) {
+    if (!(*direct_clients).empty()) {
         for (int i = 0; i < (*direct_clients).size() - 1; i++) {
             message += (*direct_clients)[i];
             message += delimiter;
@@ -72,9 +72,7 @@ std::string T::makeTableMessage() {
             message += delimiter;
         }
     }
-
-    // Add the reachable ones
-    if ((*reachable_clients).empty()) {
+    if (!(*reachable_clients).empty()) {
         for (int i = 0; i < (*reachable_clients).size() - 1; i++) {
             message += ((*reachable_clients)[i]).first;
             message += delimiter;
@@ -88,7 +86,7 @@ void T::broadcastTable() {
     // Should share the table with all the direct routers
     std::vector<std::string>* directRouters =(this->getTable())->getDirectRouters();
     std::vector<std::string> ipport;
-    for (auto const &router : (*directRouters)) {
+    for (std::string router : (*directRouters)) {
         splitString(router, ipport, ':');
         this->sendMessage(this->ip, std::to_string(this->port), ipport[0], ipport[1], TABLE_MESSAGE, this->makeTableMessage(), this->getSocketDescriptor(router));
     }
@@ -107,6 +105,7 @@ void T::processTablePacket(const unsigned char* packet) {
     std::vector<std::string>* direct_clients = (this->getTable())->getDirectClients();
     std::vector<std::string> new_clients;
     splitString(tableMessage, new_clients, ';');
+
     bool oldClient, oldRouter, isDirectClient, sendUpdate = false;
     for (int i = 0; i < new_clients.size(); i++) {
         oldClient = false;

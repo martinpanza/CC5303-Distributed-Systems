@@ -7,7 +7,13 @@
 #include <deque>
 #include "../utils.h"
 #include <mutex>
+#include <stdio.h>
+#include <algorithm>
 #include <condition_variable>
+#include <condition_variable>
+#include <vector>
+#include <sys/socket.h>
+#include <stdlib.h>
 
 #define ACK_MESSAGE 1
 #define CHAT_MESSAGE 2
@@ -47,9 +53,9 @@ public:
     int getFragmentBit(const unsigned char* packet);
     uint16_t getTotalLength(const unsigned char* packet);
     int getType(const unsigned char* packet);
-    uint16_t getOffset(const unsigned char* packet);
-    uint16_t getSrcPort(const unsigned char* packet);
-    uint16_t getDestPort(const unsigned char* packet);
+    static uint16_t getOffset(const unsigned char* packet);
+    static uint16_t getSrcPort(const unsigned char* packet);
+    static uint16_t getDestPort(const unsigned char* packet);
 
     void setFragmentBit(unsigned char* packet, int fragmentBit);
     void setOffset(unsigned char* packet, uint16_t offset);
@@ -66,6 +72,11 @@ public:
     int getMTU(std::string name);
     std::pair<unsigned char *, unsigned char*> fragment(unsigned char* packet, int MTU);
 
+    std::vector<std::pair<std::string, std::vector<unsigned char *>>> fragmentedPackets;
+    std::pair<int, std::string> checkFragmentArrival(std::vector<unsigned char *> fragments);
+
+    int partition (std::vector<unsigned char*>fragments, int low, int high);
+    void quickSort(std::vector<unsigned char*>fragments, int low, int high);
 };
 
 

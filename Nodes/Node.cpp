@@ -2,14 +2,14 @@
 // Created by marti on 19-04-2018.
 //
 
-#include<stdio.h>
-#include <iostream>
+
 #include "Node.h"
 #ifdef __WIN32__
 # include <winsock2.h>
 #else
 # include <sys/socket.h>
 #endif
+
 
 Node::Node(std::string ip, uint16_t port, std::string name) {
     if (ip == "localhost") {
@@ -37,9 +37,7 @@ int Node::sendMessage(const std::string ip_src, const std::string port_src,
     return 0;
 }
 
-void Node::receiveTablePacket() {
-
-}
+void Node::receiveTablePacket() {}
 
 Table* Node::getTable() {
     return &(this->table);
@@ -121,8 +119,6 @@ std::string Node::getMessage(const unsigned char* packet) {
     return std::string(message);
 }
 
-
-
 void Node::printPacket(const unsigned char* packet) {
     std::cout << "Src IP: "<< this->getSrcIp(packet) << std::endl;
     std::cout << "Src Port: "<< this->getSrcPort(packet) << std::endl;
@@ -134,6 +130,45 @@ void Node::printPacket(const unsigned char* packet) {
     std::cout << "Offset: "<< this->getOffset(packet) << std::endl;
     std::cout << "Last: "<< this->getLastBit(packet) << std::endl;
     std::cout << "Message: "<< this->getMessage(packet) << std::endl;
+}
+
+void swap(unsigned char** a, unsigned char** b) {
+    unsigned char* t = *a;
+    *a = *b;
+    *b = t;
+}
+int Node::partition(std::vector<unsigned char*>fragments, int low, int high) {
+    int pivot = this->getOffset(fragments[high]);    // pivot
+    int i = (low - 1);  // Index of smaller element
+
+    for (int j = low; j <= high- 1; j++) {
+        // If current element is smaller than or
+        // equal to pivot
+        if (this->getOffset(fragments[j]) <= pivot)
+        {
+            i++;    // increment index of smaller element
+            swap(&fragments[i], &fragments[j]);
+        }
+    }
+    swap(&fragments[i + 1], &fragments[high]);
+    return (i + 1);
+}
+
+/* The main function that implements QuickSort
+ arr[] --> Array to be sorted,
+  low  --> Starting index,
+  high  --> Ending index */
+void Node::quickSort(std::vector<unsigned char*>fragments, int low, int high) {
+    if (low < high) {
+        /* pi is partitioning index, arr[p] is now
+           at right place */
+        int pi = partition(fragments, low, high);
+
+        // Separately sort elements before
+        // partition and after partition
+        this->quickSort(fragments, low, pi - 1);
+        this->quickSort(fragments, pi + 1, high);
+    }
 }
 
 std::pair<unsigned char *, unsigned char*> Node::fragment(unsigned char* packet, int MTU) {
@@ -296,4 +331,25 @@ int Node::getMTU(std::string name) {
     return 0;
 }
 
+std::pair<int, std::string> Node::checkFragmentArrival(std::vector<unsigned char *> fragments) {
+    std::pair<int, std::string> result = {0, ""};
+    this->quickSort(fragments, 0, (int) fragments.size() - 1);
+    int lastPacketArrived = 0;
+    uint16_t totalSum = 0;
+    std::string message;
+
+    for (int i = 0; i < fragments.size(); i++) {
+        totalSum += this->getOffset(fragments[i]);
+        message += this->getMessage(fragments[i]);
+        if (this->getLastBit(fragments[i])) {
+            lastPacketArrived = 1;
+        }
+    }
+
+    if (lastPacketArrived) {
+        result.first = 1;
+        result.second = message;
+    }
+    return result;
+};
 

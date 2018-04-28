@@ -83,15 +83,16 @@ void sendTh(T *t) {
 
             if (t->getType(packet) == TABLE_MESSAGE){
                 t->processTablePacket(packet);
+            } else {
+
+                std::cout << "Searching for Routers..." << std::endl;
+                usefulRouters = t->searchConnectedRouter(name);
+
+                int sd = t->getSocketDescriptor(usefulRouters.front());
+
+                sleep(t->getDelay(name));
+                send(sd, packet, t->getTotalLength(packet), 0);
             }
-
-            std::cout << "Searching for Routers..." << std::endl;
-            usefulRouters = t->searchConnectedRouter(name);
-
-            int sd = t->getSocketDescriptor(usefulRouters.front());
-
-            sleep(t->getDelay(name));
-            send(sd, packet, t->getTotalLength(packet), 0);
         } else {
             (t->mtx).unlock();
         }

@@ -37,7 +37,7 @@ int C::run() {
     std::thread accepter (acceptTh, this, server_fd);
     accepter.detach();
 
-    std::thread cProcessor (cProcessTh, this, server_fd);
+    std::thread cProcessor (cProcessTh, this);
     cProcessor.detach();
 
     std::string s;

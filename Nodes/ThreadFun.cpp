@@ -61,7 +61,7 @@ void receiveTh(Node *n, int sd){
     }
 }
 
-void sendTh(Node *n) {
+void sendTh(T *n) {
     unsigned char* packet;
     std::string name;
     std::string ip_src, port_src, ip_dest, port_dest;
@@ -72,27 +72,33 @@ void sendTh(Node *n) {
             packet = (n->message_queue).front();
             (n->message_queue).pop_front();
 
-            ip_src = n->getSrcIp(packet);
-            port_src = std::to_string(n->getSrcPort(packet));
-            ip_dest = n->getDestIp(packet);
-            port_dest = std::to_string(n->getDestPort(packet));
-            name = ip_dest;
-            name += ":";
-            name += port_dest;
+            std::cout << "got message" << std::endl;
+            std::cout << n->getType(packet) << std::endl;
+            if (n->getType(packet) == TABLE_MESSAGE) {
+                n->processTablePacket(packet);
+                n->getTable()->printTable();
+            } else {
+                ip_src = n->getSrcIp(packet);
+                port_src = std::to_string(n->getSrcPort(packet));
+                ip_dest = n->getDestIp(packet);
+                port_dest = std::to_string(n->getDestPort(packet));
+                name = ip_dest;
+                name += ":";
+                name += port_dest;
 
-            std::cout << "Searching for Routers..." << std::endl;
-            usefulRouters = n->searchConnectedRouter(name);
-            int sd = n->getSocketDescriptor(usefulRouters.front());
+                std::cout << "Searching for Routers..." << std::endl;
+                usefulRouters = n->searchConnectedRouter(name);
+                int sd = n->getSocketDescriptor(usefulRouters.front());
 
-            if (n->getTotalLength(packet) > n->getMTU(name)){
-                std::pair<unsigned char *, unsigned char*> f_packets = n->fragment(packet, n->getMTU(name));
-                packet = f_packets.first;
-                n->message_queue.push_front(f_packets.second);
+                if (n->getTotalLength(packet) > n->getMTU(name)) {
+                    std::pair<unsigned char *, unsigned char *> f_packets = n->fragment(packet, n->getMTU(name));
+                    packet = f_packets.first;
+                    n->message_queue.push_front(f_packets.second);
+                }
+                (n->mtx).unlock();
+                sleep((unsigned int) n->getDelay(name));
+                send(sd, packet, n->getTotalLength(packet), 0);
             }
-
-            (n->mtx).unlock();
-            sleep((unsigned int) n->getDelay(name));
-            send(sd, packet, n->getTotalLength(packet), 0);
         } else {
             (n->mtx).unlock();
         }

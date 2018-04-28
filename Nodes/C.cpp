@@ -11,7 +11,7 @@
 #include <vector>
 
 void C::addConnection(std::string ip, std::string port) {
-    this->connections.push_back(std::pair<std::string, std::pair<int, int>>(ip + ":" + port , std::pair<int, int>(1,512)));
+    this->connections.push_back(std::pair<std::string, std::pair<int, int>>(ip + ":" + port , std::pair<int, int>(1, 512)));
     this->getTable()->direct_routers.push_back(ip + ":" + port);
 }
 
@@ -37,7 +37,7 @@ int C::run() {
     std::thread accepter (acceptTh, this, server_fd);
     accepter.detach();
 
-    std::thread cProcessor (cProcessTh, this, server_fd);
+    std::thread cProcessor (cProcessTh, this);
     cProcessor.detach();
 
     std::string s;

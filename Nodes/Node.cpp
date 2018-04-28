@@ -183,11 +183,11 @@ std::pair<unsigned char *, unsigned char*> Node::fragment(unsigned char* packet,
     int bot_message_size = (int) message.length() - MTU - HEADER_SIZE;
 
     std::string top_message = message.substr(0, (unsigned long) top_message_size),
-            bot_message = message.substr(0, (unsigned long) bot_message_size);
+            bot_message = message.substr(top_message_size);
 
 
     unsigned char* top_packet = this->makePacket(ip_src, port_src, ip_dest, port_dest, type, top_message);
-    unsigned char* bot_packet = this->makePacket(ip_dest, port_dest, ip_dest, port_dest, type, bot_message);
+    unsigned char* bot_packet = this->makePacket(ip_src, port_src, ip_dest, port_dest, type, bot_message);
 
     this->setFragmentBit(top_packet, 1);
     this->setFragmentBit(bot_packet, 1);
@@ -335,20 +335,25 @@ std::pair<int, std::string> Node::checkFragmentArrival(std::vector<unsigned char
     std::pair<int, std::string> result = {0, ""};
     this->quickSort(fragments, 0, (int) fragments.size() - 1);
     int lastPacketArrived = 0;
+    uint16_t totalLength = 0;
     uint16_t totalSum = 0;
     std::string message;
 
     for (int i = 0; i < fragments.size(); i++) {
-        totalSum += this->getOffset(fragments[i]);
+        totalSum += this->getMessage(fragments[i]).size();
         message += this->getMessage(fragments[i]);
         if (this->getLastBit(fragments[i])) {
             lastPacketArrived = 1;
+            totalLength = (uint16_t) (this->getOffset(fragments[i]) + this->getMessage(fragments[i]).size());
         }
     }
+    std::cout << message << std::endl;
 
-    if (lastPacketArrived) {
-        result.first = 1;
-        result.second = message;
+    if (totalLength != 0) {
+        if (lastPacketArrived and totalLength == totalSum) {
+            result.first = 1;
+            result.second = message;
+        }
     }
     return result;
 };

@@ -93,6 +93,7 @@ void sendTh(Node *n) {
             (n->mtx).unlock();
             sleep((unsigned int) n->getDelay(name));
             send(sd, packet, n->getTotalLength(packet), 0);
+            std::cout << "Message sent" << std::endl;
         } else {
             (n->mtx).unlock();
         }
@@ -114,28 +115,30 @@ void cProcessTh(C *c) {
             if (c->getType(packet) == CHAT_MESSAGE){
                 ip = c->getSrcIp(packet);
                 port = std::to_string(c->getSrcPort(packet));
-                name += ip;
-                name += ":";
-                name += port;
-
+                name = ip + ":" + port;
                 if (c->getFragmentBit(packet)){
                     int found = 0;
                     for (int i = 0; i < c->fragmentedPackets.size(); i++){
+                        std::cout << name << c->fragmentedPackets[i].first << std::endl;
                         if (name == c->fragmentedPackets[i].first){
                             c->fragmentedPackets[i].second.push_back(packet);
 
                             std::pair<int, std::string> result = c->checkFragmentArrival(c->fragmentedPackets[i].second);
+                            std::cout << result.first << result.second << std::endl;
                             if (result.first){
                                 std::cout << "Llego mensaje de " << name << "->" << result.second << std::endl;
                                 sleep((unsigned int) c->connections.front().second.first);
                                 c->sendMessage(c->ip, std::to_string(c->port), ip, port, ACK_MESSAGE, std::string(""),
                                                c->getSocketDescriptor(c->getTable()->direct_routers.front()));
+                                std::cout << "Message sent" << std::endl;
+                                c->fragmentedPackets.erase (c->fragmentedPackets.begin()+i);
                             }
 
                             found = 1;
                             break;
                         }
                     }
+                    std::cout << found << std::endl;
                     if(found == 0){
                         std::vector<unsigned char*> v;
                         v.push_back(packet);
@@ -147,6 +150,7 @@ void cProcessTh(C *c) {
                     sleep((unsigned int) c->connections.front().second.first);
                     c->sendMessage(c->ip, std::to_string(c->port), ip, port, ACK_MESSAGE, std::string(""),
                                    c->getSocketDescriptor(c->getTable()->direct_routers.front()));
+                    std::cout << "Message sent" << std::endl;
                 }
             } else {
                 std::cout << "Su mensaje ha sido recibido" << std::endl;

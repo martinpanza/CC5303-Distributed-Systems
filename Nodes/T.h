@@ -17,8 +17,8 @@ public:
     std::string makeTableMessage();
     void processTablePacket(const unsigned char* packet);
     void broadcastTable();
-    void shareTable(std::string ip, std::string port);
 
+    void shareTable(std::string ip, std::string port, int sd);
 };
 
 

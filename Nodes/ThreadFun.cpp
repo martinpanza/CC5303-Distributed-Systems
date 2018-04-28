@@ -63,33 +63,37 @@ void receiveTh(Node *n, int sd){
     }
 }
 
-void sendTh(Node *n) {
+void sendTh(T *t) {
     unsigned char* packet;
     std::string name;
     std::string ip_src, port_src, ip_dest, port_dest;
     std::vector<std::string> usefulRouters;
     while (1) {
-        (n->mtx).lock();
-        if (!n->message_queue.empty()) {
-            packet = (n->message_queue).front();
-            (n->message_queue).pop_front();
-            (n->mtx).unlock();
+        (t->mtx).lock();
+        if (!t->message_queue.empty()) {
+            packet = (t->message_queue).front();
+            (t->message_queue).pop_front();
+            (t->mtx).unlock();
 
-            ip_src = n->getSrcIp(packet);
-            port_src = std::to_string(n->getSrcPort(packet));
-            ip_dest = n->getDestIp(packet);
-            port_dest = std::to_string(n->getDestPort(packet));
+            ip_src = t->getSrcIp(packet);
+            port_src = std::to_string(t->getSrcPort(packet));
+            ip_dest = t->getDestIp(packet);
+            port_dest = std::to_string(t->getDestPort(packet));
             name = ip_dest + ":" + port_dest;
 
+            if (t->getType(packet) == TABLE_MESSAGE){
+                t->processTablePacket(packet);
+            }
+
             std::cout << "Searching for Routers..." << std::endl;
-            usefulRouters = n->searchConnectedRouter(name);
+            usefulRouters = t->searchConnectedRouter(name);
 
-            int sd = n->getSocketDescriptor(usefulRouters.front());
+            int sd = t->getSocketDescriptor(usefulRouters.front());
 
-            sleep(n->getDelay(name));
-            send(sd, packet, n->getTotalLength(packet), 0);
+            sleep(t->getDelay(name));
+            send(sd, packet, t->getTotalLength(packet), 0);
         } else {
-            (n->mtx).unlock();
+            (t->mtx).unlock();
         }
         sleep(1);
     }

@@ -44,9 +44,10 @@ int T::run() {
         // connect ip port type
         if (words[0] == connect_ and words.size() == 4) {
             int client_sd = clientSocket(stoi(words[2]));
-
-            this->addConnection(words[1], words[2], words[3]);
+            // THIS MUST GO FIRST
             this->socketDescriptors.push_back(std::pair<int, std::string>(client_sd, words[1] + ":" + words[2]));
+            // THIS MUST GO SECOND
+            this->addConnection(words[1], words[2], words[3]);
 
             std::thread receiver (receiveTh, this ,client_sd);
             receiver.detach();
@@ -94,10 +95,12 @@ void T::broadcastTable() {
 }
 
 void T::shareTable(std::string ip, std::string port, int sd) {
-    std::cout << "sharetable" << std::endl;
-    std::cout << this->makeTableMessage() << std::endl;
-    this->sendMessage(this->ip, std::to_string(this->port), std::move(ip), std::move(port),
-                      TABLE_MESSAGE, this->makeTableMessage(), sd);
+    if (this->makeTableMessage() != "") {
+        std::cout << "sharetable" << std::endl;
+        std::cout << this->makeTableMessage() << std::endl;
+        this->sendMessage(this->ip, std::to_string(this->port), std::move(ip), std::move(port),
+                          TABLE_MESSAGE, this->makeTableMessage(), sd);
+    }
 }
 
 void T::processTablePacket(const unsigned char* packet) {
@@ -173,6 +176,7 @@ void T::addConnection(std::string ip, std::string port, std::string type) {
     } else if (type == "T") {
         (this->getTable())->addDirectRouter(ipport);
         // Should share table instantly?
+        std::cout << "friend router sck descp " << this->getSocketDescriptor(ipport) << std::endl;
         this->shareTable(ip, port, this->getSocketDescriptor(ipport));
     }
     // add to connections

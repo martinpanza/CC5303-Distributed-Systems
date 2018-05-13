@@ -54,7 +54,8 @@ void receiveTh(Node *n, int sd){
         auto * to = (char *)malloc(valread * sizeof(char));
         copyBuffer(buffer, &to, valread);
         std::cout << "Received packet" << std::endl;
-        n->printPacket((unsigned char*)to);
+        //n->printPacket((unsigned char*)to);
+        n->getMessage((unsigned char*) to);
 
         (n->mtx).lock();
         (n->message_queue).push_back((unsigned  char*)to);
@@ -66,7 +67,7 @@ void sendTh(T *n) {
     unsigned char* packet;
     std::string name;
     std::string ip_src, port_src, ip_dest, port_dest;
-    std::vector<std::string> usefulRouters;
+    std::string usefulRouter;
     while (1) {
         (n->mtx).lock();
         if (!n->message_queue.empty()) {
@@ -90,18 +91,18 @@ void sendTh(T *n) {
                 name += port_dest;
 
                 std::cout << "Searching for Routers..." << std::endl;
-                usefulRouters = n->searchConnectedRouter(name);
-                std::cout << "useful router: " << usefulRouters.front() << std::endl;
-                int sd = n->getSocketDescriptor(usefulRouters.front());
+                usefulRouter = n->searchConnectedRouter(name);
+                std::cout << "useful router: " << usefulRouter << std::endl;
+                int sd = n->getSocketDescriptor(usefulRouter);
 
-                if (n->getTotalLength(packet) > n->getMTU(usefulRouters.front())) {
-                    std::cout << "fragmenting. plen: " << n->getTotalLength(packet) << ". MTU: " << n->getMTU(usefulRouters.front()) << std::endl;
-                    std::pair<unsigned char *, unsigned char *> f_packets = n->fragment(packet, n->getMTU(usefulRouters.front()));
+                if (n->getTotalLength(packet) > n->getMTU(usefulRouter)) {
+                    std::cout << "fragmenting. plen: " << n->getTotalLength(packet) << ". MTU: " << n->getMTU(usefulRouter) << std::endl;
+                    std::pair<unsigned char *, unsigned char *> f_packets = n->fragment(packet, n->getMTU(usefulRouter));
                     packet = f_packets.first;
                     n->message_queue.push_front(f_packets.second);
                 }
                 (n->mtx).unlock();
-                sleep((unsigned int) n->getDelay(usefulRouters.front()));
+                sleep((unsigned int) n->getDelay(usefulRouter));
                 send(sd, packet, n->getTotalLength(packet), 0);
             }
         } else {
@@ -125,7 +126,7 @@ void cProcessTh(C *c) {
             if (c->getType(packet) == CHAT_MESSAGE){
                 ip = c->getSrcIp(packet);
                 port = std::to_string(c->getSrcPort(packet));
-                name += ip;
+                name = ip;
                 name += ":";
                 name += port;
 

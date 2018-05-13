@@ -257,34 +257,35 @@ unsigned char* Node::makePacket(std::string ip_src, std::string port_src, std::s
     return packet;
 }
 
-std::vector<std::string> Node::searchConnectedRouter(std::string name) {
-    std::vector<std::string> usefulRouters;
-
+std::string Node::searchConnectedRouter(std::string name) {
+    std::string usefulRouter;
+    std::cout << "searching conn to " << name << std::endl;
     std::vector<std::string>* direct_clients =
             (this->getTable())->getDirectClients();
     for (int i = 0; i < direct_clients->size(); i++) {
         if ((*direct_clients)[i] == name) {
-            usefulRouters = std::vector<std::string>();
-            usefulRouters.push_back(name);
-            return usefulRouters;
+            return name;
         }
     }
+
+    std::cout << "searched clients" << std::endl;
 
 
     std::vector<std::pair<std::string, std::vector<std::string>>>* reachable_clients =
             (this->getTable())->getReachableClients();
     for (int i = 0; i < reachable_clients->size(); i++) {
+        std::cout << "reachable: " << (*reachable_clients)[i].first << std::endl;
         if ((*reachable_clients)[i].first == name) {
-            usefulRouters = (*reachable_clients)[i].second;
+            usefulRouter = (*reachable_clients)[i].second.front();
             // Round robin
-            std::pair<std::string, std::vector<std::string>> channel = (*reachable_clients)[i];
-            reachable_clients->erase(reachable_clients->begin() + i);
-            reachable_clients->push_back(channel);
+            (*reachable_clients)[i].second.erase((*reachable_clients)[i].second.begin());
+            (*reachable_clients)[i].second.push_back(usefulRouter);
+            //(*reachable_clients)[i].second.erase((*reachable_clients)[i].second.begin());
             break;
         }
     }
-
-    return usefulRouters;
+    std::cout << "wtf" << std::endl;
+    return usefulRouter;
 }
 
 void Node::sendNextPacket() {

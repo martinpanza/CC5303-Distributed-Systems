@@ -68,7 +68,7 @@ std::string T::makeTableMessage() {
             message += delimiter;
         }
         message += (*direct_clients)[(*direct_clients).size() - 1];
-        if ((*reachable_clients).empty()) {
+        if (!(*reachable_clients).empty()) {
             message += delimiter;
         }
     }
@@ -79,6 +79,7 @@ std::string T::makeTableMessage() {
         }
         message += (*reachable_clients)[(*reachable_clients).size() - 1].first;
     }
+    std::cout << "Table message created: " << message << std::endl;
     return message;
 }
 
@@ -93,6 +94,8 @@ void T::broadcastTable() {
 }
 
 void T::shareTable(std::string ip, std::string port, int sd) {
+    std::cout << "sharetable" << std::endl;
+    std::cout << this->makeTableMessage() << std::endl;
     this->sendMessage(this->ip, std::to_string(this->port), std::move(ip), std::move(port),
                       TABLE_MESSAGE, this->makeTableMessage(), sd);
 }
@@ -105,6 +108,11 @@ void T::processTablePacket(const unsigned char* packet) {
     std::vector<std::string>* direct_clients = (this->getTable())->getDirectClients();
     std::vector<std::string> new_clients;
     splitString(tableMessage, new_clients, ';');
+
+    std::cout << "clients that arrived" << std::endl;
+    for (int i = 0; i < new_clients.size(); i++) {
+        std::cout << new_clients[i] << std::endl;
+    }
 
     bool oldClient, oldRouter, isDirectClient, sendUpdate = false;
     for (int i = 0; i < new_clients.size(); i++) {

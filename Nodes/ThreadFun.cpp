@@ -53,6 +53,7 @@ void receiveTh(Node *n, int sd){
 
         auto * to = (char *)malloc(valread * sizeof(char));
         copyBuffer(buffer, &to, valread);
+        std::cout << "Received packet" << std::endl;
         n->printPacket((unsigned char*)to);
 
         (n->mtx).lock();
@@ -76,7 +77,9 @@ void sendTh(T *n) {
             std::cout << n->getType(packet) << std::endl;
             if (n->getType(packet) == TABLE_MESSAGE) {
                 n->processTablePacket(packet);
+                std::cout << "Printing table" << std::endl;
                 n->getTable()->printTable();
+                (n->mtx).unlock();
             } else {
                 ip_src = n->getSrcIp(packet);
                 port_src = std::to_string(n->getSrcPort(packet));
@@ -88,15 +91,17 @@ void sendTh(T *n) {
 
                 std::cout << "Searching for Routers..." << std::endl;
                 usefulRouters = n->searchConnectedRouter(name);
+                std::cout << "useful router: " << usefulRouters.front() << std::endl;
                 int sd = n->getSocketDescriptor(usefulRouters.front());
 
-                if (n->getTotalLength(packet) > n->getMTU(name)) {
-                    std::pair<unsigned char *, unsigned char *> f_packets = n->fragment(packet, n->getMTU(name));
+                if (n->getTotalLength(packet) > n->getMTU(usefulRouters.front())) {
+                    std::cout << "fragmenting. plen: " << n->getTotalLength(packet) << ". MTU: " << n->getMTU(usefulRouters.front()) << std::endl;
+                    std::pair<unsigned char *, unsigned char *> f_packets = n->fragment(packet, n->getMTU(usefulRouters.front()));
                     packet = f_packets.first;
                     n->message_queue.push_front(f_packets.second);
                 }
                 (n->mtx).unlock();
-                sleep((unsigned int) n->getDelay(name));
+                sleep((unsigned int) n->getDelay(usefulRouters.front()));
                 send(sd, packet, n->getTotalLength(packet), 0);
             }
         } else {

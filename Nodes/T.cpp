@@ -80,7 +80,7 @@ std::string T::makeTableMessage() {
         }
         message += (*reachable_clients)[(*reachable_clients).size() - 1].first;
     }
-    std::cout << "Table message created: " << message << std::endl;
+   // std::cout << "Table message created: " << message << std::endl;
     return message;
 }
 
@@ -96,8 +96,8 @@ void T::broadcastTable() {
 
 void T::shareTable(std::string ip, std::string port, int sd) {
     if (this->makeTableMessage() != "") {
-        std::cout << "sharetable" << std::endl;
-        std::cout << this->makeTableMessage() << std::endl;
+        //std::cout << "sharetable" << std::endl;
+        //std::cout << this->makeTableMessage() << std::endl;
         this->sendMessage(this->ip, std::to_string(this->port), std::move(ip), std::move(port),
                           TABLE_MESSAGE, this->makeTableMessage(), sd);
     }
@@ -112,10 +112,10 @@ void T::processTablePacket(const unsigned char* packet) {
     std::vector<std::string> new_clients;
     splitString(tableMessage, new_clients, ';');
 
-    std::cout << "clients that arrived" << std::endl;
+    /*std::cout << "clients that arrived" << std::endl;
     for (int i = 0; i < new_clients.size(); i++) {
         std::cout << new_clients[i] << std::endl;
-    }
+    }*/
 
     bool oldClient, oldRouter, isDirectClient, sendUpdate = false;
     for (int i = 0; i < new_clients.size(); i++) {
@@ -176,7 +176,7 @@ void T::addConnection(std::string ip, std::string port, std::string type) {
     } else if (type == "T") {
         (this->getTable())->addDirectRouter(ipport);
         // Should share table instantly?
-        std::cout << "friend router sck descp " << this->getSocketDescriptor(ipport) << std::endl;
+        // std::cout << "friend router sck descp " << this->getSocketDescriptor(ipport) << std::endl;
         this->shareTable(ip, port, this->getSocketDescriptor(ipport));
     }
     // add to connections
@@ -186,7 +186,7 @@ void T::addConnection(std::string ip, std::string port, std::string type) {
 }
 
 int T::sendMessage(std::string ip_src, std::string port_src, std::string ip_dest, std::string port_dest, int type, std::string message, int sd) {
-    std::cout << "sending message..." << std::endl;
+    // std::cout << "sending message..." << std::endl;
     unsigned char* packet = this->makePacket(std::move(ip_src), std::move(port_src), std::move(ip_dest), std::move(port_dest), type, message);
     auto totalLength = (size_t) this->getTotalLength(packet);
     send(sd, packet, totalLength, 0);

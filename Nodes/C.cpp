@@ -16,10 +16,10 @@ void C::addConnection(std::string ip, std::string port) {
 }
 
 int C::sendMessage(std::string ip_src, std::string port_src, std::string ip_dest, std::string port_dest, int type, std::string message, int sd) {
-    std::cout << "sending message..." << std::endl;
+    //std::cout << "sending message..." << std::endl;
     unsigned char* packet = this->makePacket(std::move(ip_src), std::move(port_src), std::move(ip_dest), std::move(port_dest), type, message);
     auto totalLength = (size_t) this->getTotalLength(packet);
-    std::cout << this->getMessage(packet) << std::endl;
+    //std::cout << this->getMessage(packet) << std::endl;
     while(this->getTotalLength(packet) > this->connections.front().second.second){
         std::pair<unsigned char*, unsigned char*> f_packets = this->fragment(packet, this->connections.front().second.second);
         sleep(this->connections.front().second.first);

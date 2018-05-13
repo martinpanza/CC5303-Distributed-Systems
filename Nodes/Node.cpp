@@ -276,6 +276,10 @@ std::vector<std::string> Node::searchConnectedRouter(std::string name) {
     for (int i = 0; i < reachable_clients->size(); i++) {
         if ((*reachable_clients)[i].first == name) {
             usefulRouters = (*reachable_clients)[i].second;
+            // Round robin
+            std::pair<std::string, std::vector<std::string>> channel = (*reachable_clients)[i];
+            reachable_clients->erase(reachable_clients->begin() + i);
+            reachable_clients->push_back(channel);
             break;
         }
     }

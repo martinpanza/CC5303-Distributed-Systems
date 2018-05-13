@@ -142,6 +142,7 @@ void cProcessTh(C *c) {
                                 sleep((unsigned int) c->connections.front().second.first);
                                 c->sendMessage(c->ip, std::to_string(c->port), ip, port, ACK_MESSAGE, std::string(""),
                                                c->getSocketDescriptor(c->getTable()->direct_routers.front()));
+                                c->fragmentedPackets.erase (c->fragmentedPackets.begin()+i);
                             }
 
                             found = 1;

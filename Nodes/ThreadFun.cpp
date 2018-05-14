@@ -53,9 +53,9 @@ void receiveTh(Node *n, int sd){
 
         auto * to = (char *)malloc(valread * sizeof(char));
         copyBuffer(buffer, &to, valread);
-        std::cout << "Received packet - Message:" << std::endl;
+        std::cout << "Received packet" << std::endl;
         //n->printPacket((unsigned char*)to);
-        std::cout << n->getMessage((unsigned char*) to) << std::endl;
+        n->getMessage((unsigned char*) to);
 
         (n->mtx).lock();
         (n->message_queue).push_back((unsigned  char*)to);
@@ -74,12 +74,12 @@ void sendTh(T *n) {
             packet = (n->message_queue).front();
             (n->message_queue).pop_front();
 
-            //std::cout << "got message" << std::endl;
-            //std::cout << n->getType(packet) << std::endl;
+            std::cout << "got message" << std::endl;
+            std::cout << n->getType(packet) << std::endl;
             if (n->getType(packet) == TABLE_MESSAGE) {
                 n->processTablePacket(packet);
-                //std::cout << "Printing table" << std::endl;
-                //n->getTable()->printTable();
+                std::cout << "Printing table" << std::endl;
+                n->getTable()->printTable();
                 (n->mtx).unlock();
             } else {
                 ip_src = n->getSrcIp(packet);
@@ -90,9 +90,9 @@ void sendTh(T *n) {
                 name += ":";
                 name += port_dest;
 
-                //std::cout << "Searching for Routers..." << std::endl;
+                std::cout << "Searching for Routers..." << std::endl;
                 usefulRouter = n->searchConnectedRouter(name);
-                //std::cout << "useful router: " << usefulRouter << std::endl;
+                std::cout << "useful router: " << usefulRouter << std::endl;
                 int sd = n->getSocketDescriptor(usefulRouter);
 
                 if (n->getTotalLength(packet) > n->getMTU(usefulRouter)) {
@@ -142,9 +142,7 @@ void cProcessTh(C *c) {
                                 sleep((unsigned int) c->connections.front().second.first);
                                 c->sendMessage(c->ip, std::to_string(c->port), ip, port, ACK_MESSAGE, std::string(""),
                                                c->getSocketDescriptor(c->getTable()->direct_routers.front()));
-
-                                //wtf
-                                c->fragmentedPackets.erase(c->fragmentedPackets.begin() + i);
+                                c->fragmentedPackets.erase (c->fragmentedPackets.begin()+i);
                             }
 
                             found = 1;

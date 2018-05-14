@@ -31,7 +31,7 @@ void acceptTh(Node *n, int sd) {
         std::string ip = inet_ntoa(address.sin_addr);
         std::string port = std::to_string(ntohs(address.sin_port));
 
-        std::cout << "connnection established" << std::endl;
+        std::cout << "connection established" << std::endl;
 
         std::thread receiver (receiveTh, n, new_socket);
         receiver.detach();
@@ -46,10 +46,11 @@ void copyBuffer(const char* buffer, char** to, int size) {
 }
 
 void receiveTh(Node *n, int sd){
-    char buffer[2048] = {0};
+    int buf_size = 1024;
+    char buffer[buf_size] = {0};
     int valread = 1;
     while (valread > 0) {
-        valread = read(sd, buffer, 2048);
+        valread = read(sd, buffer, buf_size);
 
         auto * to = (char *)malloc(valread * sizeof(char));
         copyBuffer(buffer, &to, valread);
@@ -74,11 +75,11 @@ void sendTh(T *n) {
             packet = (n->message_queue).front();
             (n->message_queue).pop_front();
 
-            std::cout << "got message of type: " << n->getType(packet) << std::endl;
+            //std::cout << "got message of type: " << n->getType(packet) << std::endl;
             if (n->getType(packet) == TABLE_MESSAGE) {
                 n->processTablePacket(packet);
-                std::cout << "Printing table" << std::endl;
-                n->getTable()->printTable();
+                //std::cout << "Printing table" << std::endl;
+                //n->getTable()->printTable();
                 (n->mtx).unlock();
             } else {
                 ip_src = n->getSrcIp(packet);
@@ -89,13 +90,13 @@ void sendTh(T *n) {
                 name += ":";
                 name += port_dest;
 
-                std::cout << "Searching for Routers..." << std::endl;
+                //std::cout << "Searching for Routers..." << std::endl;
                 usefulRouter = n->searchConnectedRouter(name);
-                std::cout << "useful router: " << usefulRouter << std::endl;
+                //std::cout << "useful router: " << usefulRouter << std::endl;
                 int sd = n->getSocketDescriptor(usefulRouter);
 
                 if (n->getTotalLength(packet) > n->getMTU(usefulRouter)) {
-                    std::cout << "fragmenting. plen: " << n->getTotalLength(packet) << ". MTU: " << n->getMTU(usefulRouter) << std::endl;
+                    //std::cout << "fragmenting. plen: " << n->getTotalLength(packet) << ". MTU: " << n->getMTU(usefulRouter) << std::endl;
                     std::pair<unsigned char *, unsigned char *> f_packets = n->fragment(packet, n->getMTU(usefulRouter));
                     packet = f_packets.first;
                     n->message_queue.push_front(f_packets.second);

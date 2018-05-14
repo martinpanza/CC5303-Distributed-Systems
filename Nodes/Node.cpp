@@ -131,20 +131,21 @@ void swap(unsigned char** a, unsigned char** b) {
     *a = *b;
     *b = t;
 }
-int Node::partition(std::vector<unsigned char*>fragments, int low, int high) {
-    int pivot = this->getOffset(fragments[high]);    // pivot
+
+int Node::partition(std::vector<unsigned char*>* fragments, int low, int high) {
+    int pivot = this->getOffset((*fragments)[high]);    // pivot
     int i = (low - 1);  // Index of smaller element
 
     for (int j = low; j <= high- 1; j++) {
         // If current element is smaller than or
         // equal to pivot
-        if (this->getOffset(fragments[j]) <= pivot)
+        if (this->getOffset((*fragments)[j]) <= pivot)
         {
             i++;    // increment index of smaller element
-            swap(&fragments[i], &fragments[j]);
+            swap(&((*fragments)[i]), &((*fragments)[j]));
         }
     }
-    swap(&fragments[i + 1], &fragments[high]);
+    swap(&((*fragments)[i + 1]), &((*fragments)[high]));
     return (i + 1);
 }
 
@@ -152,7 +153,7 @@ int Node::partition(std::vector<unsigned char*>fragments, int low, int high) {
  arr[] --> Array to be sorted,
   low  --> Starting index,
   high  --> Ending index */
-void Node::quickSort(std::vector<unsigned char*>fragments, int low, int high) {
+void Node::quickSort(std::vector<unsigned char*>* fragments, int low, int high) {
     if (low < high) {
         /* pi is partitioning index, arr[p] is now
            at right place */
@@ -282,7 +283,6 @@ std::string Node::searchConnectedRouter(std::string name) {
             // Round robin
             (*reachable_clients)[i].second.erase((*reachable_clients)[i].second.begin());
             (*reachable_clients)[i].second.push_back(usefulRouter);
-            //(*reachable_clients)[i].second.erase((*reachable_clients)[i].second.begin());
             break;
         }
     }
@@ -321,7 +321,7 @@ int Node::getMTU(std::string name) {
 
 std::pair<int, std::string> Node::checkFragmentArrival(std::vector<unsigned char *> fragments) {
     std::pair<int, std::string> result = {0, ""};
-    this->quickSort(fragments, 0, (int) fragments.size() - 1);
+    this->quickSort(&fragments, 0, (int) fragments.size() - 1);
     int lastPacketArrived = 0;
     uint16_t totalLength = 0;
     uint16_t totalSum = 0;

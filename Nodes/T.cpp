@@ -44,6 +44,12 @@ int T::run() {
         // connect ip port type
         if (words[0] == connect_ and words.size() == 4) {
             int client_sd = clientSocket(stoi(words[2]));
+
+            if (client_sd == -1) {
+                std::cout << "Check if ip and port are correct and try again." << std::endl;
+                continue;
+            }
+
             // THIS MUST GO FIRST
             this->socketDescriptors.push_back(std::pair<int, std::string>(client_sd, words[1] + ":" + words[2]));
             // THIS MUST GO SECOND
@@ -168,12 +174,12 @@ void T::addConnection(std::string ip, std::string port, std::string type) {
     int delay = random_int(2, 10);
     int MTU = random_mtu();
     // Put in direct routers or clients
-    if (type == "C") {
+    if (type == "C" || type == "c") {
         delay = 1;
         MTU = 512;
         (this->getTable())->addDirectClient(ipport);
         (this->broadcastTable());
-    } else if (type == "T") {
+    } else if (type == "T" || type == "t") {
         (this->getTable())->addDirectRouter(ipport);
         // Should share table instantly?
         // std::cout << "friend router sck descp " << this->getSocketDescriptor(ipport) << std::endl;

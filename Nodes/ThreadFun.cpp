@@ -46,7 +46,7 @@ void copyBuffer(const char* buffer, char** to, int size) {
 }
 
 void receiveTh(Node *n, int sd){
-    char buffer[1024] = {0};
+    char buffer[2048] = {0};
     int valread = 1;
     while (valread > 0) {
         valread = read(sd, buffer, 1024);
@@ -74,8 +74,7 @@ void sendTh(T *n) {
             packet = (n->message_queue).front();
             (n->message_queue).pop_front();
 
-            std::cout << "got message" << std::endl;
-            std::cout << n->getType(packet) << std::endl;
+            std::cout << "got message of type: " << n->getType(packet) << std::endl;
             if (n->getType(packet) == TABLE_MESSAGE) {
                 n->processTablePacket(packet);
                 std::cout << "Printing table" << std::endl;

@@ -25,10 +25,6 @@ int Node::run() {
     return 0;
 }
 
-int Node::receivePacket(char* p) {
-    return 0;
-}
-
 int Node::sendMessage(const std::string ip_src, const std::string port_src,
                       const std::string ip_dest, const std::string port_dest,
                       const int type, const std::string message, const int sd) {
@@ -36,8 +32,6 @@ int Node::sendMessage(const std::string ip_src, const std::string port_src,
     std::cout << ip_dest << ":" << port_dest << " " << type << " " << message;
     return 0;
 }
-
-void Node::receiveTablePacket() {}
 
 Table* Node::getTable() {
     return &(this->table);
@@ -172,7 +166,7 @@ void Node::quickSort(std::vector<unsigned char*>fragments, int low, int high) {
 }
 
 std::pair<unsigned char *, unsigned char*> Node::fragment(unsigned char* packet, int MTU) {
-    std::string ip_src = this->getSrcIp(packet), ip_dest= this->getDestIp(packet);
+    std::string ip_src = this->getSrcIp(packet), ip_dest = this->getDestIp(packet);
     std::string port_src = std::to_string(this->getSrcPort(packet)),
             port_dest = std::to_string(this->getDestPort(packet));
     int type = this->getType(packet);
@@ -267,7 +261,7 @@ unsigned char* Node::makePacket(std::string ip_src, std::string port_src, std::s
 
 std::string Node::searchConnectedRouter(std::string name) {
     std::string usefulRouter;
-    std::cout << "searching conn to " << name << std::endl;
+    //std::cout << "searching conn to " << name << std::endl;
     std::vector<std::string>* direct_clients =
             (this->getTable())->getDirectClients();
     for (int i = 0; i < direct_clients->size(); i++) {
@@ -276,13 +270,13 @@ std::string Node::searchConnectedRouter(std::string name) {
         }
     }
 
-    std::cout << "searched clients" << std::endl;
+    //std::cout << "searched clients" << std::endl;
 
 
     std::vector<std::pair<std::string, std::vector<std::string>>>* reachable_clients =
             (this->getTable())->getReachableClients();
     for (int i = 0; i < reachable_clients->size(); i++) {
-        std::cout << "reachable: " << (*reachable_clients)[i].first << std::endl;
+        //std::cout << "reachable: " << (*reachable_clients)[i].first << std::endl;
         if ((*reachable_clients)[i].first == name) {
             usefulRouter = (*reachable_clients)[i].second.front();
             // Round robin
@@ -292,27 +286,8 @@ std::string Node::searchConnectedRouter(std::string name) {
             break;
         }
     }
-    std::cout << "wtf" << std::endl;
+    //std::cout << "wtf" << std::endl;
     return usefulRouter;
-}
-
-void Node::sendNextPacket() {
-    //TODO: Modificar para que se traiga un vector con todas las rutas UTILES de acuerdo al destino del paquete
-    unsigned char* packet = this->message_queue.back();
-    this->message_queue.pop_back();
-
-    int connection_mtu = this->connections[this->connectionIndex].second.second;
-    /*
-    if (sizeof(packet) > connection_mtu){
-        std::pair<unsigned char*, unsigned char*> fragmentedPackets = fragment(sizeof(packet), connection_mtu);
-        packet = fragmentedPackets.first;
-        this->message_queue.push_back(fragmentedPackets.second);
-    }
-
-    //TODO: send through this->connections[this->connectionIndex];
-
-    this->connectionIndex = (int) ((this->connectionIndex + 1) % this->connections.size());
-    */
 }
 
 int Node::getSocketDescriptor(std::string name) {
@@ -360,7 +335,7 @@ std::pair<int, std::string> Node::checkFragmentArrival(std::vector<unsigned char
             totalLength = (uint16_t) (this->getOffset(fragments[i]) + this->getMessage(fragments[i]).size());
         }
     }
-    std::cout << message << std::endl;
+    //std::cout << message << std::endl;]
 
     if (totalLength != 0) {
         if (lastPacketArrived and totalLength == totalSum) {
@@ -370,5 +345,3 @@ std::pair<int, std::string> Node::checkFragmentArrival(std::vector<unsigned char
     }
     return result;
 };
-
-

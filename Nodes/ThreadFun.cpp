@@ -49,7 +49,7 @@ void receiveTh(Node *n, int sd){
     char buffer[2048] = {0};
     int valread = 1;
     while (valread > 0) {
-        valread = read(sd, buffer, 1024);
+        valread = read(sd, buffer, 2048);
 
         auto * to = (char *)malloc(valread * sizeof(char));
         copyBuffer(buffer, &to, valread);

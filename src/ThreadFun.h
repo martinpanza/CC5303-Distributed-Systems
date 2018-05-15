@@ -8,8 +8,9 @@
 #endif //CC5303_DISTRIBUTED_SYSTEMS_RECEIVE_H
 
 #include "C.h"
+#include "T.h"
 
 void acceptTh(Node *n, int sd);
 void receiveTh(Node *n, int sd);
-void sendTh(Node* n);
+void sendTh(T* n);
 void cProcessTh(C*n);

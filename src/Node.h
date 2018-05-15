@@ -40,10 +40,8 @@ public:
     int connectionIndex = 0;
     std::vector<std::pair<int, std::string>> socketDescriptors;
 
-    std::vector<std::string> searchConnectedRouter(std::string name);
-    explicit Node(std::string ip, uint16_t port);
-    virtual int receivePacket(char* p);
-    virtual void receiveTablePacket();
+    std::string searchConnectedRouter(std::string name);
+    explicit Node(std::string ip, uint16_t port, std::string name);
     virtual int run();
     Table* getTable();
     std::string getSrcIp(const unsigned char* packet);
@@ -74,8 +72,8 @@ public:
     std::vector<std::pair<std::string, std::vector<unsigned char *>>> fragmentedPackets;
     std::pair<int, std::string> checkFragmentArrival(std::vector<unsigned char *> fragments);
 
-    int partition (std::vector<unsigned char*>fragments, int low, int high);
-    void quickSort(std::vector<unsigned char*>fragments, int low, int high);
+    int partition (std::vector<unsigned char*>* fragments, int low, int high);
+    void quickSort(std::vector<unsigned char*>* fragments, int low, int high);
 };
 
 

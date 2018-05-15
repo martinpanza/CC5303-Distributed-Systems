@@ -16,18 +16,17 @@ void C::addConnection(std::string ip, std::string port) {
 }
 
 int C::sendMessage(std::string ip_src, std::string port_src, std::string ip_dest, std::string port_dest, int type, std::string message, int sd) {
-    std::cout << "sending message..." << std::endl;
+    //std::cout << "sending message..." << std::endl;
     unsigned char* packet = this->makePacket(std::move(ip_src), std::move(port_src), std::move(ip_dest), std::move(port_dest), type, message);
-    auto totalLength = (size_t) this->getTotalLength(packet);
-    std::cout << this->getMessage(packet) << std::endl;
+    //std::cout << this->getMessage(packet) << std::endl;
     while(this->getTotalLength(packet) > this->connections.front().second.second){
         std::pair<unsigned char*, unsigned char*> f_packets = this->fragment(packet, this->connections.front().second.second);
         sleep(this->connections.front().second.first);
-        send(sd, f_packets.first, totalLength, 0);
+        send(sd, f_packets.first, (size_t) this->getTotalLength(f_packets.first), 0);
         packet = f_packets.second;
     }
     sleep(this->connections.front().second.first);
-    send(sd, packet, totalLength, 0);
+    send(sd, packet, (size_t) this->getTotalLength(packet), 0);
     return 0;
 }
 
@@ -44,7 +43,7 @@ int C::run() {
     std::string connect_ = "connect";
     std::string message_ = "message";
     std::vector<std::string> words;
-    int client_sd;
+    int client_sd = -1;
     while(std::getline(std::cin, s)) {
         splitString(s, words, ' ');
         if (words[1] == "localhost"){
@@ -54,6 +53,11 @@ int C::run() {
         if (words[0] == connect_ and words.size() >= 3) {
             client_sd = clientSocket(stoi(words[2]));
 
+            if (client_sd == -1) {
+                std::cout << "Check if ip and port are correct and try again." << std::endl;
+                continue;
+            }
+
             this->addConnection(words[1], words[2]);
             this->socketDescriptors.push_back(std::pair<int, std::string>(client_sd, words[1] + ":" + words[2]));
 
@@ -62,6 +66,12 @@ int C::run() {
 
 
         } else if (words[0] == message_ and words.size() >= 4) {
+
+            if (client_sd == -1) {
+                std::cout << "Try connecting to a router again." << std::endl;
+                continue;
+            }
+
             std::string m = "";
             for (int i = 3; i < words.size() - 1; i++) {
                 m += words[i];

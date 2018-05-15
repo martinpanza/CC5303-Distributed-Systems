@@ -46,13 +46,17 @@ void copyBuffer(const char* buffer, char** to, int size) {
 }
 
 void receiveTh(Node *n, int sd){
-    char buffer[1024] = {0};
+    int buf_size = 1024;
+    char buffer[buf_size] = {0};
     int valread = 1;
     while (valread > 0) {
-        valread = read(sd, buffer, 1024);
+        valread = read(sd, buffer, buf_size);
 
         auto * to = (char *)malloc(valread * sizeof(char));
         copyBuffer(buffer, &to, valread);
+        std::cout << "Received packet" << std::endl;
+        //n->printPacket((unsigned char*)to);
+        n->getMessage((unsigned char*) to);
 
         (n->mtx).lock();
         (n->message_queue).push_back((unsigned  char*)to);
@@ -60,39 +64,47 @@ void receiveTh(Node *n, int sd){
     }
 }
 
-void sendTh(Node *n) {
+void sendTh(T *n) {
     unsigned char* packet;
     std::string name;
     std::string ip_src, port_src, ip_dest, port_dest;
-    std::vector<std::string> usefulRouters;
+    std::string usefulRouter;
     while (1) {
         (n->mtx).lock();
         if (!n->message_queue.empty()) {
             packet = (n->message_queue).front();
             (n->message_queue).pop_front();
 
-            ip_src = n->getSrcIp(packet);
-            port_src = std::to_string(n->getSrcPort(packet));
-            ip_dest = n->getDestIp(packet);
-            port_dest = std::to_string(n->getDestPort(packet));
-            name = ip_dest;
-            name += ":";
-            name += port_dest;
+            //std::cout << "got message of type: " << n->getType(packet) << std::endl;
+            if (n->getType(packet) == TABLE_MESSAGE) {
+                n->processTablePacket(packet);
+                //std::cout << "Printing table" << std::endl;
+                //n->getTable()->printTable();
+                (n->mtx).unlock();
+            } else {
+                ip_src = n->getSrcIp(packet);
+                port_src = std::to_string(n->getSrcPort(packet));
+                ip_dest = n->getDestIp(packet);
+                port_dest = std::to_string(n->getDestPort(packet));
+                name = ip_dest;
+                name += ":";
+                name += port_dest;
 
-            std::cout << "Searching for Routers..." << std::endl;
-            usefulRouters = n->searchConnectedRouter(name);
-            int sd = n->getSocketDescriptor(usefulRouters.front());
+                //std::cout << "Searching for Routers..." << std::endl;
+                usefulRouter = n->searchConnectedRouter(name);
+                //std::cout << "useful router: " << usefulRouter << std::endl;
+                int sd = n->getSocketDescriptor(usefulRouter);
 
-            if (n->getTotalLength(packet) > n->getMTU(name)){
-                std::pair<unsigned char *, unsigned char*> f_packets = n->fragment(packet, n->getMTU(name));
-                packet = f_packets.first;
-                n->message_queue.push_front(f_packets.second);
+                if (n->getTotalLength(packet) > n->getMTU(usefulRouter)) {
+                    //std::cout << "fragmenting. plen: " << n->getTotalLength(packet) << ". MTU: " << n->getMTU(usefulRouter) << std::endl;
+                    std::pair<unsigned char *, unsigned char *> f_packets = n->fragment(packet, n->getMTU(usefulRouter));
+                    packet = f_packets.first;
+                    n->message_queue.push_front(f_packets.second);
+                }
+                (n->mtx).unlock();
+                sleep((unsigned int) n->getDelay(usefulRouter));
+                send(sd, packet, n->getTotalLength(packet), 0);
             }
-
-            (n->mtx).unlock();
-            sleep((unsigned int) n->getDelay(name));
-            send(sd, packet, n->getTotalLength(packet), 0);
-            std::cout << "Message sent" << std::endl;
         } else {
             (n->mtx).unlock();
         }
@@ -114,7 +126,10 @@ void cProcessTh(C *c) {
             if (c->getType(packet) == CHAT_MESSAGE){
                 ip = c->getSrcIp(packet);
                 port = std::to_string(c->getSrcPort(packet));
-                name = ip + ":" + port;
+                name = ip;
+                name += ":";
+                name += port;
+
                 if (c->getFragmentBit(packet)){
                     int found = 0;
                     for (int i = 0; i < c->fragmentedPackets.size(); i++){
@@ -127,7 +142,6 @@ void cProcessTh(C *c) {
                                 sleep((unsigned int) c->connections.front().second.first);
                                 c->sendMessage(c->ip, std::to_string(c->port), ip, port, ACK_MESSAGE, std::string(""),
                                                c->getSocketDescriptor(c->getTable()->direct_routers.front()));
-                                std::cout << "Message sent" << std::endl;
                                 c->fragmentedPackets.erase (c->fragmentedPackets.begin()+i);
                             }
 
@@ -142,11 +156,10 @@ void cProcessTh(C *c) {
                         c->fragmentedPackets.push_back(newFragmentedPacket);
                     }
                 } else {
-                    std::cout << "Llego mensaje de " << name << " -> " << c->getMessage(packet) << std::endl;
+                    std::cout << "Llego mensaje de " << name << "->" << c->getMessage(packet) << std::endl;
                     sleep((unsigned int) c->connections.front().second.first);
                     c->sendMessage(c->ip, std::to_string(c->port), ip, port, ACK_MESSAGE, std::string(""),
                                    c->getSocketDescriptor(c->getTable()->direct_routers.front()));
-                    std::cout << "Message sent" << std::endl;
                 }
             } else {
                 std::cout << "Su mensaje ha sido recibido" << std::endl;

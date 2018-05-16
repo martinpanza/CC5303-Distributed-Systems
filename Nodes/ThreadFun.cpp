@@ -55,8 +55,6 @@ void receiveTh(Node *n, int sd){
         auto * to = (char *)malloc(valread * sizeof(char));
         copyBuffer(buffer, &to, valread);
         std::cout << "Received packet" << std::endl;
-        //n->printPacket((unsigned char*)to);
-        n->getMessage((unsigned char*) to);
 
         (n->mtx).lock();
         (n->message_queue).push_back((unsigned  char*)to);

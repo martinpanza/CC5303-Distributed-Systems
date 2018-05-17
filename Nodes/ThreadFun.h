@@ -14,3 +14,4 @@ void acceptTh(Node *n, int sd);
 void receiveTh(Node *n, int sd);
 void sendTh(T* n);
 void cProcessTh(C*n);
+void serverTh(C*n);

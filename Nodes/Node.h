@@ -31,6 +31,15 @@ public:
     std::mutex mtx;
     std::mutex listen_mutex;
     std::condition_variable cond;
+
+    std::mutex turnedOffMutex;
+    std::condition_variable turnedOffCond;
+
+    std::mutex serverMutex;
+    std::condition_variable serverCond;
+
+    int iAmAServer = 0;
+
     Table table;
     std::string ip;
     uint16_t port;

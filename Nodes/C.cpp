@@ -42,6 +42,8 @@ int C::run() {
     std::string s;
     std::string connect_ = "connect";
     std::string message_ = "message";
+    std::string startServer_ = "start_server";
+    std::string stopServer_ = "stop_server";
     std::vector<std::string> words;
     int client_sd = -1;
     while(std::getline(std::cin, s)) {
@@ -85,6 +87,26 @@ int C::run() {
             std::unique_lock<std::mutex> lk(this->listen_mutex);
             this->cond.wait(lk);
             lk.unlock();
+        } else if (words[0] == startServer_) {
+
+            this->iAmAServer = 1;
+
+            std::unique_lock<std::mutex> lk(this->serverMutex);
+            this->serverCond.wait(lk);
+            lk.unlock();
+
+            std::thread server (serverTh, this);
+            server.detach();
+
+        } else if (words[0] == stopServer_) {
+            this->iAmAServer = 0;
+
+            std::unique_lock<std::mutex> lk(this->serverMutex);
+            this->serverCond.wait(lk);
+            lk.unlock();
+
+            std::thread cProcessor (cProcessTh, this);
+            cProcessor.detach();
         }
     }
 }

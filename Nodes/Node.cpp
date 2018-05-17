@@ -344,4 +344,9 @@ std::pair<int, std::string> Node::checkFragmentArrival(std::vector<unsigned char
         }
     }
     return result;
+}
+
+int Node::allMessageArrived(std::vector<unsigned char *> fragments) {
+    //TODO: revisar si paso el mensaje entero
+    return 0;
 };

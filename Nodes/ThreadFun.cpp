@@ -180,12 +180,15 @@ void cProcessTh(C *c) {
     }
 }
 
-void serverTh (C* c){
+void cServerTh(C *c){
     std::cout << "I am a Server" << std::endl;
     unsigned char* packet;
-    std::string ip;
-    std::string port;
-    std::string name;
+    std::string ipSrc;
+    std::string portSrc;
+    std::string nameSrc;
+    std::string ipDest;
+    std::string portDest;
+    std::string nameDest;
     while (1){
         if (!c->iAmAServer){
             c->serverCond.notify_one();
@@ -198,50 +201,109 @@ void serverTh (C* c){
                 packet = (c->message_queue).front();
                 (c->message_queue).pop_front();
                 (c->mtx).unlock();
-                if (c->getType(packet) == CHAT_MESSAGE) {
-                    ip = c->getSrcIp(packet);
-                    port = std::to_string(c->getSrcPort(packet));
-                    name = ip;
-                    name += ":";
-                    name += port;
 
-                    if (c->getFragmentBit(packet)) {
-                        int found = 0;
-                        for (int i = 0; i < c->fragmentedPackets.size(); i++) {
-                            if (name == c->fragmentedPackets[i].first) {
-                                c->fragmentedPackets[i].second.push_back(packet);
+                ipSrc = c->getSrcIp(packet);
+                portSrc = std::to_string(c->getSrcPort(packet));
+                nameSrc = ipSrc;
+                nameSrc += ":";
+                nameSrc += portSrc;
 
-                                std::pair<int, std::string> result = c->checkFragmentArrival(
-                                        c->fragmentedPackets[i].second);
-                                if (result.first) {
-                                    std::cout << "Llego mensaje de " << name << "->" << result.second << std::endl;
-                                    sleep((unsigned int) c->connections.front().second.first);
-                                    c->sendMessage(c->ip, std::to_string(c->port), ip, port, ACK_MESSAGE,
-                                                   std::string(""),
-                                                   c->getSocketDescriptor(c->getTable()->direct_routers.front()));
-                                    c->fragmentedPackets.erase(c->fragmentedPackets.begin() + i);
+                ipDest = c->getDestIp(packet);
+                portDest = std::to_string(c->getDestPort(packet));
+                nameDest = ipDest;
+                nameDest += ":";
+                nameDest += portDest;
+
+                if (nameDest == c->ip + ":" + std::to_string(c->port)) {
+
+
+                    if (c->getType(packet) == CHAT_MESSAGE) {
+
+                        if (c->getFragmentBit(packet)) {
+                            int found = 0;
+                            for (int i = 0; i < c->fragmentedPackets.size(); i++) {
+                                if (nameSrc == c->fragmentedPackets[i].first) {
+                                    c->fragmentedPackets[i].second.push_back(packet);
+
+                                    std::pair<int, std::string> result = c->checkFragmentArrival(
+                                            c->fragmentedPackets[i].second);
+                                    if (result.first) {
+                                        std::cout << "Llego mensaje de " << nameSrc << "->" << result.second << std::endl;
+                                        sleep((unsigned int) c->connections.front().second.first);
+                                        c->sendMessage(c->ip, std::to_string(c->port), ipSrc, portSrc, ACK_MESSAGE,
+                                                       std::string(""),
+                                                       c->getSocketDescriptor(c->getTable()->direct_routers.front()));
+                                        c->fragmentedPackets.erase(c->fragmentedPackets.begin() + i);
+                                    }
+
+                                    found = 1;
+                                    break;
                                 }
+                            }
+                            if (found == 0) {
+                                std::vector<unsigned char *> v;
+                                v.push_back(packet);
+                                std::pair<std::string, std::vector<unsigned char *>> newFragmentedPacket = {nameSrc, v};
+                                c->fragmentedPackets.push_back(newFragmentedPacket);
+                            }
+                        } else {
+                            std::cout << "Llego mensaje de " << nameSrc << "->" << c->getMessage(packet) << std::endl;
+                            sleep((unsigned int) c->connections.front().second.first);
+                            c->sendMessage(c->ip, std::to_string(c->port), ipSrc, portSrc, ACK_MESSAGE, std::string(""),
+                                           c->getSocketDescriptor(c->getTable()->direct_routers.front()));
+                        }
+                    } else {
+                        std::cout << "Su mensaje ha sido recibido" << std::endl;
+                        c->cond.notify_one();
+                    }
+                } else {
 
-                                found = 1;
+                    if (c->getType(packet) == CHAT_MESSAGE) {
+
+                        if (c->getFragmentBit(packet)) {
+                            int found = 0;
+                            for (int i = 0; i < c->serverFragmentedPackets.size(); i++) {
+                                if (nameSrc == c->serverFragmentedPackets[i].first.first &&
+                                        nameDest == c->serverFragmentedPackets[i].first.second
+                                        // && TODO: ver que el mensaje no este en la lista de ACK que se esperan
+                                        ) {
+                                    c->serverFragmentedPackets[i].second.push_back(packet);
+
+                                    int result = c->allMessageArrived(
+                                            c->serverFragmentedPackets[i].second);
+                                    if (result) {
+                                        std::cout << "Paso el mensaje de " << nameSrc << " para " << nameDest << std::endl;
+                                        c->serverFragmentedPackets.erase(c->serverFragmentedPackets.begin() + i);
+                                        c->serverWaitingForAcks.push_back({nameSrc, nameDest});
+                                    }
+
+                                    found = 1;
+                                    break;
+                                }
+                            }
+                            if (found == 0) {
+                                std::vector<unsigned char *> v;
+                                v.push_back(packet);
+                                std::pair<std::pair<std::string, std::string>, std::vector<unsigned char *>> newFragmentedPacket = {{nameSrc, nameDest}, v};
+                                c->serverFragmentedPackets.push_back(newFragmentedPacket);
+                            }
+                        } else {
+                            std::cout << "Paso mensaje de " << nameSrc << " para " << nameDest << std::endl;
+                            c->serverWaitingForAcks.push_back({nameSrc, nameDest});
+                        }
+                    } else {
+                        for (int i = 0; i < c->serverWaitingForAcks.size(); i++) {
+                            if (nameSrc == c->serverWaitingForAcks[i].first &&
+                                nameDest == c->serverWaitingForAcks[i].second) {
+                                std::cout << "Paso ACK de " << nameSrc << " para " << nameDest << std::endl;
+                                c->serverWaitingForAcks.erase(c->serverWaitingForAcks.begin() + i);
                                 break;
                             }
                         }
-                        if (found == 0) {
-                            std::vector<unsigned char *> v;
-                            v.push_back(packet);
-                            std::pair<std::string, std::vector<unsigned char *>> newFragmentedPacket = {name, v};
-                            c->fragmentedPackets.push_back(newFragmentedPacket);
-                        }
-                    } else {
-                        std::cout << "Llego mensaje de " << name << "->" << c->getMessage(packet) << std::endl;
-                        sleep((unsigned int) c->connections.front().second.first);
-                        c->sendMessage(c->ip, std::to_string(c->port), ip, port, ACK_MESSAGE, std::string(""),
-                                       c->getSocketDescriptor(c->getTable()->direct_routers.front()));
                     }
-                } else {
-                    std::cout << "Su mensaje ha sido recibido" << std::endl;
-                    c->cond.notify_one();
+
                 }
+
             } else {
                 (c->mtx).unlock();
             }

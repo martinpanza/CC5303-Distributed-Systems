@@ -95,7 +95,7 @@ int C::run() {
             this->serverCond.wait(lk);
             lk.unlock();
 
-            std::thread server (serverTh, this);
+            std::thread server (cServerTh, this);
             server.detach();
 
         } else if (words[0] == stopServer_) {

@@ -79,7 +79,11 @@ public:
     std::pair<unsigned char *, unsigned char*> fragment(unsigned char* packet, int MTU);
 
     std::vector<std::pair<std::string, std::vector<unsigned char *>>> fragmentedPackets;
+    std::vector<std::pair<std::pair<std::string, std::string>, std::vector<unsigned char *>>> serverFragmentedPackets;
+    std::vector<std::pair<std::string, std::string>> serverWaitingForAcks;
     std::pair<int, std::string> checkFragmentArrival(std::vector<unsigned char *> fragments);
+
+    int allMessageArrived(std::vector<unsigned char *> fragments);
 
     int partition (std::vector<unsigned char*>* fragments, int low, int high);
     void quickSort(std::vector<unsigned char*>* fragments, int low, int high);

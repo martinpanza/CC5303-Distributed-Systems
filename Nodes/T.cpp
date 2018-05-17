@@ -35,6 +35,8 @@ int T::run() {
 
     std::string s;
     std::string connect_ = "connect";
+    std::string startServer_ = "start_server";
+    std::string stopServer_ = "stop_server";
     std::vector<std::string> words;
     while(std::getline(std::cin, s)) {
         splitString(s, words, ' ');
@@ -57,6 +59,26 @@ int T::run() {
 
             std::thread receiver (receiveTh, this ,client_sd);
             receiver.detach();
+        } else if (words[0] == startServer_) {
+
+            this->iAmAServer = 1;
+
+            std::unique_lock<std::mutex> lk(this->serverMutex);
+            this->serverCond.wait(lk);
+            lk.unlock();
+
+            std::thread server (tServerTh, this);
+            server.detach();
+
+        } else if (words[0] == stopServer_) {
+            this->iAmAServer = 0;
+
+            std::unique_lock<std::mutex> lk(this->serverMutex);
+            this->serverCond.wait(lk);
+            lk.unlock();
+
+            std::thread sender (sendTh, this);
+            sender.detach();
         }
     }
 }

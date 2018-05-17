@@ -68,43 +68,44 @@ void sendTh(T *n) {
     std::string ip_src, port_src, ip_dest, port_dest;
     std::string usefulRouter;
     while (1) {
-        (n->mtx).lock();
-        if (!n->message_queue.empty()) {
-            packet = (n->message_queue).front();
-            (n->message_queue).pop_front();
-
-            //std::cout << "got message of type: " << n->getType(packet) << std::endl;
-            if (n->getType(packet) == TABLE_MESSAGE) {
-                n->processTablePacket(packet);
-                //std::cout << "Printing table" << std::endl;
-                //n->getTable()->printTable();
-                (n->mtx).unlock();
-            } else {
-                ip_src = n->getSrcIp(packet);
-                port_src = std::to_string(n->getSrcPort(packet));
-                ip_dest = n->getDestIp(packet);
-                port_dest = std::to_string(n->getDestPort(packet));
-                name = ip_dest;
-                name += ":";
-                name += port_dest;
-
-                //std::cout << "Searching for Routers..." << std::endl;
-                usefulRouter = n->searchConnectedRouter(name);
-                //std::cout << "useful router: " << usefulRouter << std::endl;
-                int sd = n->getSocketDescriptor(usefulRouter);
-
-                if (n->getTotalLength(packet) > n->getMTU(usefulRouter)) {
-                    //std::cout << "fragmenting. plen: " << n->getTotalLength(packet) << ". MTU: " << n->getMTU(usefulRouter) << std::endl;
-                    std::pair<unsigned char *, unsigned char *> f_packets = n->fragment(packet, n->getMTU(usefulRouter));
-                    packet = f_packets.first;
-                    n->message_queue.push_front(f_packets.second);
-                }
-                (n->mtx).unlock();
-                sleep((unsigned int) n->getDelay(usefulRouter));
-                send(sd, packet, n->getTotalLength(packet), 0);
-            }
+        if (!n->iAmAServer){
+            n->serverCond.notify_one();
+            std::cout << "See ya soon!" << std::endl;
+            return;
         } else {
-            (n->mtx).unlock();
+            (n->mtx).lock();
+            if (!n->message_queue.empty()) {
+                packet = (n->message_queue).front();
+                (n->message_queue).pop_front();
+
+                if (n->getType(packet) == TABLE_MESSAGE) {
+                    n->processTablePacket(packet);
+                    (n->mtx).unlock();
+                } else {
+                    ip_src = n->getSrcIp(packet);
+                    port_src = std::to_string(n->getSrcPort(packet));
+                    ip_dest = n->getDestIp(packet);
+                    port_dest = std::to_string(n->getDestPort(packet));
+                    name = ip_dest;
+                    name += ":";
+                    name += port_dest;
+
+                    usefulRouter = n->searchConnectedRouter(name);
+                    int sd = n->getSocketDescriptor(usefulRouter);
+
+                    if (n->getTotalLength(packet) > n->getMTU(usefulRouter)) {
+                        std::pair<unsigned char *, unsigned char *> f_packets = n->fragment(packet,
+                                                                                            n->getMTU(usefulRouter));
+                        packet = f_packets.first;
+                        n->message_queue.push_front(f_packets.second);
+                    }
+                    (n->mtx).unlock();
+                    sleep((unsigned int) n->getDelay(usefulRouter));
+                    send(sd, packet, n->getTotalLength(packet), 0);
+                }
+            } else {
+                (n->mtx).unlock();
+            }
         }
         sleep(1);
     }
@@ -190,7 +191,7 @@ void cServerTh(C *c){
     std::string portDest;
     std::string nameDest;
     while (1){
-        if (!c->iAmAServer){
+        if (c->iAmAServer){
             c->serverCond.notify_one();
             std::cout << "Felt good while being a server" << std::endl;
             return;
@@ -291,6 +292,17 @@ void cServerTh(C *c){
                             std::cout << "Paso mensaje de " << nameSrc << " para " << nameDest << std::endl;
                             c->serverWaitingForAcks.push_back({nameSrc, nameDest});
                         }
+
+                        //Send Packet
+                        while(c->getTotalLength(packet) > c->connections.front().second.second){
+                            std::pair<unsigned char*, unsigned char*> f_packets = c->fragment(packet, c->connections.front().second.second);
+                            sleep(c->connections.front().second.first);
+                            send(c->getSocketDescriptor(c->getTable()->direct_routers.front()), f_packets.first, (size_t) c->getTotalLength(f_packets.first), 0);
+                            packet = f_packets.second;
+                        }
+                        sleep(c->connections.front().second.first);
+                        send(c->getSocketDescriptor(c->getTable()->direct_routers.front()), packet, (size_t) c->getTotalLength(packet), 0);
+
                     } else {
                         for (int i = 0; i < c->serverWaitingForAcks.size(); i++) {
                             if (nameSrc == c->serverWaitingForAcks[i].first &&
@@ -300,6 +312,9 @@ void cServerTh(C *c){
                                 break;
                             }
                         }
+                        //Send ACK
+                        sleep(c->connections.front().second.first);
+                        send(c->getSocketDescriptor(c->getTable()->direct_routers.front()), packet, (size_t) c->getTotalLength(packet), 0);
                     }
 
                 }
@@ -310,6 +325,62 @@ void cServerTh(C *c){
 
         }
         sleep(5);
+    }
+}
+
+void tServerTh(T* n){
+    std::cout << "Yes! A server at least!" << std::endl;
+    unsigned char* packet;
+    std::string name;
+    std::string ip_src, port_src, ip_dest, port_dest;
+    std::string usefulRouter;
+    while (1) {
+        if (!n->iAmAServer){
+            n->serverCond.notify_one();
+            std::cout << "Felt good while being a server" << std::endl;
+            return;
+        } else {
+            (n->mtx).lock();
+            if (!n->message_queue.empty()) {
+                packet = (n->message_queue).front();
+                (n->message_queue).pop_front();
+
+                //std::cout << "got message of type: " << n->getType(packet) << std::endl;
+                if (n->getType(packet) == TABLE_MESSAGE) {
+                    n->processTablePacket(packet);
+                    //std::cout << "Printing table" << std::endl;
+                    //n->getTable()->printTable();
+                    (n->mtx).unlock();
+                } else {
+                    ip_src = n->getSrcIp(packet);
+                    port_src = std::to_string(n->getSrcPort(packet));
+                    ip_dest = n->getDestIp(packet);
+                    port_dest = std::to_string(n->getDestPort(packet));
+                    name = ip_dest;
+                    name += ":";
+                    name += port_dest;
+
+                    //std::cout << "Searching for Routers..." << std::endl;
+                    usefulRouter = n->searchConnectedRouter(name);
+                    //std::cout << "useful router: " << usefulRouter << std::endl;
+                    int sd = n->getSocketDescriptor(usefulRouter);
+
+                    if (n->getTotalLength(packet) > n->getMTU(usefulRouter)) {
+                        //std::cout << "fragmenting. plen: " << n->getTotalLength(packet) << ". MTU: " << n->getMTU(usefulRouter) << std::endl;
+                        std::pair<unsigned char *, unsigned char *> f_packets = n->fragment(packet,
+                                                                                            n->getMTU(usefulRouter));
+                        packet = f_packets.first;
+                        n->message_queue.push_front(f_packets.second);
+                    }
+                    (n->mtx).unlock();
+                    sleep((unsigned int) n->getDelay(usefulRouter));
+                    send(sd, packet, n->getTotalLength(packet), 0);
+                }
+            } else {
+                (n->mtx).unlock();
+            }
+        }
+        sleep(1);
     }
 }
 

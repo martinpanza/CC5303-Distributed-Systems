@@ -270,11 +270,22 @@ void cServerTh(C *c){
                                         ) {
                                     c->serverFragmentedPackets[i].second.push_back(packet);
 
-                                    int result = c->allMessageArrived(
-                                            c->serverFragmentedPackets[i].second);
-                                    if (result) {
+                                    std::pair<int, std::string> result = c->checkFragmentArrival(
+                                            c->fragmentedPackets[i].second);
+
+                                    if (result.first) {
                                         std::cout << "Paso el mensaje de " << nameSrc << " para " << nameDest << std::endl;
+                                        //send ack
+                                        sleep(c->connections.front().second.first);
+                                        c->sendMessage(c->ip, std::to_string(c->port), ipSrc, portSrc, ACK_MESSAGE,
+                                                       std::string(""),
+                                                       c->getSocketDescriptor(c->getTable()->direct_routers.front()));
+                                        //send message
+                                        sleep(c->connections.front().second.first);
+                                        c->sendMessage(ipSrc, portSrc, ipDest, portDest, CHAT_MESSAGE, result.second,
+                                                       c->getSocketDescriptor(c->getTable()->direct_routers.front()));
                                         c->serverFragmentedPackets.erase(c->serverFragmentedPackets.begin() + i);
+
                                         c->serverWaitingForAcks.push_back({nameSrc, nameDest});
                                     }
 
@@ -291,30 +302,50 @@ void cServerTh(C *c){
                         } else {
                             std::cout << "Paso mensaje de " << nameSrc << " para " << nameDest << std::endl;
                             c->serverWaitingForAcks.push_back({nameSrc, nameDest});
-                        }
 
-                        //Send Packet
-                        while(c->getTotalLength(packet) > c->connections.front().second.second){
-                            std::pair<unsigned char*, unsigned char*> f_packets = c->fragment(packet, c->connections.front().second.second);
+                            //send ack
                             sleep(c->connections.front().second.first);
-                            send(c->getSocketDescriptor(c->getTable()->direct_routers.front()), f_packets.first, (size_t) c->getTotalLength(f_packets.first), 0);
-                            packet = f_packets.second;
+                            c->sendMessage(c->ip, std::to_string(c->port), ipSrc, portSrc, ACK_MESSAGE,
+                                           std::string(""),
+                                           c->getSocketDescriptor(c->getTable()->direct_routers.front()));
+
+                            //Send Packet
+                            while(c->getTotalLength(packet) > c->connections.front().second.second){
+                                std::pair<unsigned char*, unsigned char*> f_packets = c->fragment(packet, c->connections.front().second.second);
+                                sleep(c->connections.front().second.first);
+                                send(c->getSocketDescriptor(c->getTable()->direct_routers.front()), f_packets.first, (size_t) c->getTotalLength(f_packets.first), 0);
+                                packet = f_packets.second;
+                            }
+                            sleep(c->connections.front().second.first);
+                            send(c->getSocketDescriptor(c->getTable()->direct_routers.front()), packet, (size_t) c->getTotalLength(packet), 0);
                         }
-                        sleep(c->connections.front().second.first);
-                        send(c->getSocketDescriptor(c->getTable()->direct_routers.front()), packet, (size_t) c->getTotalLength(packet), 0);
 
                     } else {
+                        int found = 0;
                         for (int i = 0; i < c->serverWaitingForAcks.size(); i++) {
                             if (nameSrc == c->serverWaitingForAcks[i].first &&
                                 nameDest == c->serverWaitingForAcks[i].second) {
                                 std::cout << "Paso ACK de " << nameSrc << " para " << nameDest << std::endl;
                                 c->serverWaitingForAcks.erase(c->serverWaitingForAcks.begin() + i);
+
+                                //send ack
+                                sleep(c->connections.front().second.first);
+                                c->sendMessage(c->ip, std::to_string(c->port), ipSrc, portSrc, ACK_MESSAGE,
+                                               std::string(""),
+                                               c->getSocketDescriptor(c->getTable()->direct_routers.front()));
+
+                                //Send packet
+                                sleep(c->connections.front().second.first);
+                                send(c->getSocketDescriptor(c->getTable()->direct_routers.front()), packet, (size_t) c->getTotalLength(packet), 0);
+                                found = 1;
+
                                 break;
                             }
                         }
-                        //Send ACK
-                        sleep(c->connections.front().second.first);
-                        send(c->getSocketDescriptor(c->getTable()->direct_routers.front()), packet, (size_t) c->getTotalLength(packet), 0);
+
+                        if (!found){
+                            std::cout << "????" << std::endl;
+                        }
                     }
 
                 }
@@ -329,7 +360,7 @@ void cServerTh(C *c){
 }
 
 void tServerTh(T* n){
-    std::cout << "Yes! A server at least!" << std::endl;
+    std::cout << "Yes! I'm a server at least!" << std::endl;
     unsigned char* packet;
     std::string name;
     std::string ip_src, port_src, ip_dest, port_dest;

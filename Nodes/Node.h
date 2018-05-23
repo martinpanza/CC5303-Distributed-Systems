@@ -18,6 +18,7 @@
 #define ACK_MESSAGE 1
 #define CHAT_MESSAGE 2
 #define TABLE_MESSAGE 3
+#define SACK_MESSAGE 4
 
 #define HEADER_SIZE 19
 

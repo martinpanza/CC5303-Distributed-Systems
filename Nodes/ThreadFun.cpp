@@ -277,7 +277,7 @@ void cServerTh(C *c){
                                         std::cout << "Paso el mensaje de " << nameSrc << " para " << nameDest << std::endl;
                                         //send ack
                                         sleep(c->connections.front().second.first);
-                                        c->sendMessage(c->ip, std::to_string(c->port), ipSrc, portSrc, ACK_MESSAGE,
+                                        c->sendMessage(c->ip, std::to_string(c->port), ipSrc, portSrc, SACK_MESSAGE,
                                                        std::string(""),
                                                        c->getSocketDescriptor(c->getTable()->direct_routers.front()));
                                         //send message
@@ -305,7 +305,7 @@ void cServerTh(C *c){
 
                             //send ack
                             sleep(c->connections.front().second.first);
-                            c->sendMessage(c->ip, std::to_string(c->port), ipSrc, portSrc, ACK_MESSAGE,
+                            c->sendMessage(c->ip, std::to_string(c->port), ipSrc, portSrc, SACK_MESSAGE,
                                            std::string(""),
                                            c->getSocketDescriptor(c->getTable()->direct_routers.front()));
 
@@ -330,7 +330,7 @@ void cServerTh(C *c){
 
                                 //send ack
                                 sleep(c->connections.front().second.first);
-                                c->sendMessage(c->ip, std::to_string(c->port), ipSrc, portSrc, ACK_MESSAGE,
+                                c->sendMessage(c->ip, std::to_string(c->port), ipSrc, portSrc, SACK_MESSAGE,
                                                std::string(""),
                                                c->getSocketDescriptor(c->getTable()->direct_routers.front()));
 
@@ -362,9 +362,14 @@ void cServerTh(C *c){
 void tServerTh(T* n){
     std::cout << "Yes! I'm a server at least!" << std::endl;
     unsigned char* packet;
-    std::string name;
-    std::string ip_src, port_src, ip_dest, port_dest;
+    int sd;
     std::string usefulRouter;
+    std::string ipSrc;
+    std::string portSrc;
+    std::string nameSrc;
+    std::string ipDest;
+    std::string portDest;
+    std::string nameDest;
     while (1) {
         if (!n->iAmAServer){
             n->serverCond.notify_one();
@@ -376,36 +381,138 @@ void tServerTh(T* n){
                 packet = (n->message_queue).front();
                 (n->message_queue).pop_front();
 
+                ipSrc = n->getSrcIp(packet);
+                portSrc = std::to_string(n->getSrcPort(packet));
+                nameSrc = ipSrc;
+                nameSrc += ":";
+                nameSrc += portSrc;
+
+                ipDest = n->getDestIp(packet);
+                portDest = std::to_string(n->getDestPort(packet));
+                nameDest = ipDest;
+                nameDest += ":";
+                nameDest += portDest;
+
                 //std::cout << "got message of type: " << n->getType(packet) << std::endl;
                 if (n->getType(packet) == TABLE_MESSAGE) {
                     n->processTablePacket(packet);
-                    //std::cout << "Printing table" << std::endl;
-                    //n->getTable()->printTable();
-                    (n->mtx).unlock();
-                } else {
-                    ip_src = n->getSrcIp(packet);
-                    port_src = std::to_string(n->getSrcPort(packet));
-                    ip_dest = n->getDestIp(packet);
-                    port_dest = std::to_string(n->getDestPort(packet));
-                    name = ip_dest;
-                    name += ":";
-                    name += port_dest;
+                } else if (n->getType(packet) == CHAT_MESSAGE) {
 
-                    //std::cout << "Searching for Routers..." << std::endl;
-                    usefulRouter = n->searchConnectedRouter(name);
-                    //std::cout << "useful router: " << usefulRouter << std::endl;
-                    int sd = n->getSocketDescriptor(usefulRouter);
+                    if (n->getFragmentBit(packet)) {
+                        int found = 0;
+                        for (int i = 0; i < n->serverFragmentedPackets.size(); i++) {
+                            if (nameSrc == n->serverFragmentedPackets[i].first.first &&
+                                nameDest == n->serverFragmentedPackets[i].first.second
+                                // && TODO: ver que el mensaje no este en la lista de ACK que se esperan
+                                    ) {
+                                n->serverFragmentedPackets[i].second.push_back(packet);
 
-                    if (n->getTotalLength(packet) > n->getMTU(usefulRouter)) {
-                        //std::cout << "fragmenting. plen: " << n->getTotalLength(packet) << ". MTU: " << n->getMTU(usefulRouter) << std::endl;
-                        std::pair<unsigned char *, unsigned char *> f_packets = n->fragment(packet,
-                                                                                            n->getMTU(usefulRouter));
-                        packet = f_packets.first;
-                        n->message_queue.push_front(f_packets.second);
+                                std::pair<int, std::string> result = n->checkFragmentArrival(
+                                        n->fragmentedPackets[i].second);
+
+                                if (result.first) {
+                                    std::cout << "Paso el mensaje de " << nameSrc << " para " << nameDest << std::endl;
+
+                                    usefulRouter = n->searchConnectedRouter(nameSrc);
+                                    sd = n->getSocketDescriptor(usefulRouter);
+
+                                    //send ack
+                                    sleep(n->getDelay(usefulRouter));
+                                    n->sendMessage(n->ip, std::to_string(n->port), ipSrc, portSrc, SACK_MESSAGE,
+                                                   std::string(""), sd);
+
+                                    //send message
+                                    usefulRouter = n->searchConnectedRouter(nameDest);
+                                    sd = n->getSocketDescriptor(usefulRouter);
+
+                                    packet = n->makePacket(std::move(ipSrc), std::move(portSrc), std::move(ipDest), std::move(portDest), CHAT_MESSAGE, result.second);
+                                    while(n->getTotalLength(packet) > n->getMTU(usefulRouter)){
+                                        std::pair<unsigned char*, unsigned char*> f_packets = n->fragment(packet, n->getMTU(usefulRouter));
+                                        sleep(n->getDelay(usefulRouter));
+                                        send(sd, f_packets.first, (size_t) n->getTotalLength(f_packets.first), 0);
+                                        packet = f_packets.second;
+                                        usefulRouter = n->searchConnectedRouter(nameDest);
+                                        sd = n->getSocketDescriptor(usefulRouter);
+                                    }
+                                    sleep(n->getDelay(usefulRouter));
+                                    send(sd, packet, (size_t) n->getTotalLength(packet), 0);
+
+                                    n->serverFragmentedPackets.erase(n->serverFragmentedPackets.begin() + i);
+
+                                    n->serverWaitingForAcks.push_back({nameSrc, nameDest});
+                                }
+
+                                found = 1;
+                                break;
+                            }
+                        }
+                        if (found == 0) {
+                            std::vector<unsigned char *> v;
+                            v.push_back(packet);
+                            std::pair<std::pair<std::string, std::string>, std::vector<unsigned char *>> newFragmentedPacket = {{nameSrc, nameDest}, v};
+                            n->serverFragmentedPackets.push_back(newFragmentedPacket);
+                        }
+                    } else {
+                        std::cout << "Paso mensaje de " << nameSrc << " para " << nameDest << std::endl;
+
+                        usefulRouter = n->searchConnectedRouter(nameSrc);
+                        sd = n->getSocketDescriptor(usefulRouter);
+
+                        //send ack
+                        sleep(n->getDelay(usefulRouter));
+                        n->sendMessage(n->ip, std::to_string(n->port), ipSrc, portSrc, SACK_MESSAGE,
+                                       std::string(""), sd);
+
+                        //send message
+                        usefulRouter = n->searchConnectedRouter(nameDest);
+                        sd = n->getSocketDescriptor(usefulRouter);
+
+                        while(n->getTotalLength(packet) > n->getMTU(usefulRouter)){
+                            std::pair<unsigned char*, unsigned char*> f_packets = n->fragment(packet, n->getMTU(usefulRouter));
+                            sleep(n->getDelay(usefulRouter));
+                            send(sd, f_packets.first, (size_t) n->getTotalLength(f_packets.first), 0);
+                            packet = f_packets.second;
+                            usefulRouter = n->searchConnectedRouter(nameDest);
+                            sd = n->getSocketDescriptor(usefulRouter);
+                        }
+                        sleep(n->getDelay(usefulRouter));
+                        send(sd, packet, (size_t) n->getTotalLength(packet), 0);
+
+                        n->serverWaitingForAcks.push_back({nameSrc, nameDest});
                     }
-                    (n->mtx).unlock();
-                    sleep((unsigned int) n->getDelay(usefulRouter));
-                    send(sd, packet, n->getTotalLength(packet), 0);
+
+                } else {
+                    int found = 0;
+                    for (int i = 0; i < n->serverWaitingForAcks.size(); i++) {
+                        if (nameSrc == n->serverWaitingForAcks[i].first &&
+                            nameDest == n->serverWaitingForAcks[i].second) {
+                            std::cout << "Paso ACK de " << nameSrc << " para " << nameDest << std::endl;
+                            n->serverWaitingForAcks.erase(n->serverWaitingForAcks.begin() + i);
+
+                            usefulRouter = n->searchConnectedRouter(nameSrc);
+                            sd = n->getSocketDescriptor(usefulRouter);
+
+                            //send ack
+                            sleep(n->getDelay(usefulRouter));
+                            n->sendMessage(n->ip, std::to_string(n->port), ipSrc, portSrc, SACK_MESSAGE,
+                                           std::string(""), sd);
+
+                            //send message
+                            usefulRouter = n->searchConnectedRouter(nameDest);
+                            sd = n->getSocketDescriptor(usefulRouter);
+
+                            sleep(n->getDelay(usefulRouter));
+                            send(sd, packet, (size_t) n->getTotalLength(packet), 0);
+
+                            found = 1;
+
+                            break;
+                        }
+                    }
+
+                    if (!found) {
+                        std::cout << "????" << std::endl;
+                    }
                 }
             } else {
                 (n->mtx).unlock();

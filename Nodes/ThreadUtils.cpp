@@ -30,7 +30,7 @@ void sendOneFragmentedMessage(T *n, unsigned char *packet, std::string name) {
     send(sd, packet, n->getTotalLength(packet), 0);
 }
 
-void cClient(C* c, unsigned char* packet, std::string nameSrc, std::string nameDest, std::string ipSrc,
+void cServer(C* c, unsigned char* packet, std::string nameSrc, std::string nameDest, std::string ipSrc,
              std::string portSrc, std::string ipDest, std::string portDest) {
 
 
@@ -124,7 +124,7 @@ void cClient(C* c, unsigned char* packet, std::string nameSrc, std::string nameD
     }
 }
 
-void cServer(C* c, unsigned char* packet, std::string nameSrc, std::string ipSrc, std::string portSrc) {
+void cClient(C* c, unsigned char* packet, std::string nameSrc, std::string ipSrc, std::string portSrc) {
     if (c->getType(packet) == CHAT_MESSAGE) {
 
         if (c->getFragmentBit(packet)) {
@@ -142,6 +142,7 @@ void cServer(C* c, unsigned char* packet, std::string nameSrc, std::string ipSrc
                                        std::string(""),
                                        c->getSocketDescriptor(c->getTable()->direct_routers.front()));
                         c->fragmentedPackets.erase(c->fragmentedPackets.begin() + i);
+                        c->sentAcks.insert(std::pair<std::string, int>(std::to_string('test'),1));
                     }
 
                     found = 1;
@@ -159,8 +160,16 @@ void cServer(C* c, unsigned char* packet, std::string nameSrc, std::string ipSrc
             sleep((unsigned int) c->connections.front().second.first);
             c->sendMessage(c->ip, std::to_string(c->port), ipSrc, portSrc, ACK_MESSAGE, std::string(""),
                            c->getSocketDescriptor(c->getTable()->direct_routers.front()));
+            c->sentAcks.insert(std::pair<std::string, int>(std::to_string('test'),1));
         }
+    } else if (c->getType(packet) == SACK_MESSAGE) {
+        c->waitingForSack = 0;
+        c->sentAcks.erase(std::to_string('test'));
+        std::cout << "Su mensaje ha llegado al servidor" << std::endl;
     } else {
+        c->waitingForSack = 0;
+        c->waitingForAck = 0;
+        c->sentMessage = "";
         std::cout << "Su mensaje ha sido recibido" << std::endl;
         c->cond.notify_one();
     }

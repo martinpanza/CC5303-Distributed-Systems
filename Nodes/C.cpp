@@ -84,6 +84,10 @@ int C::run() {
             this->sendMessage(this->ip, std::to_string(this->port), words[1], words[2], CHAT_MESSAGE, m, client_sd);
             printf("Message sent\n");
 
+            this->sentMessage = m;
+            this->waitingForSack = 1;
+            this->waitingForAck = 1;
+
             std::unique_lock<std::mutex> lk(this->listen_mutex);
             this->cond.wait(lk);
             lk.unlock();

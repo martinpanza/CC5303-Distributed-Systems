@@ -12,7 +12,7 @@
 
 void copyBuffer(const char* buffer, char** to, int size);
 void sendOneFragmentedMessage(T *n, unsigned char *packet, std::string name);
-void cClient(C* c, unsigned char* packet, std::string nameSrc, std::string nameDest, std::string ipSrc,
+void cServer(C* c, unsigned char* packet, std::string nameSrc, std::string nameDest, std::string ipSrc,
              std::string portSrc, std::string ipDest, std::string portDest);
-void cServer(C* c, unsigned char* packet, std::string nameSrc, std::string ipSrc, std::string portSrc);
+void cClient(C* c, unsigned char* packet, std::string nameSrc, std::string ipSrc, std::string portSrc);
 void sendFragmentedMessages(T* n, std::string nameDest, unsigned char* packet);

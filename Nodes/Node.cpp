@@ -79,6 +79,14 @@ void Node::setFragmentBit(unsigned char* packet, int fragmentBit) {
     packet[18] = (unsigned char) fragmentBit;
 }
 
+int Node::getServerBit(const unsigned char* packet) {
+    return (int) packet[19];
+}
+
+void Node::setServerBit(unsigned char* packet, int serverBit) {
+    packet[19] = (unsigned char) serverBit;
+}
+
 std::string Node::getSrcIp(const unsigned char* packet) {
     std::string ip;
     std::string ip_delimiter = ".";
@@ -175,7 +183,7 @@ std::pair<unsigned char *, unsigned char*> Node::fragment(unsigned char* packet,
     std::string message = this->getMessage(packet);
 
     int top_message_size = MTU - HEADER_SIZE;
-    int bot_message_size = (int) message.length() - MTU - HEADER_SIZE;
+    //int bot_message_size = (int) message.length() - MTU - HEADER_SIZE;
 
     std::string top_message = message.substr(0, (unsigned long) top_message_size),
             bot_message = message.substr(top_message_size);
@@ -243,7 +251,7 @@ unsigned char* Node::makePacket(std::string ip_src, std::string port_src, std::s
     packet[13] = (unsigned char) ((uint16_t) (HEADER_SIZE + message.length()) >> 8);
     packet[14] = (unsigned char) ((uint16_t) (HEADER_SIZE + message.length()) & 0xFF);
 
-    // Fragmented
+    // Last bit
     packet[15] = (unsigned char) 0;
 
     // Offset
@@ -251,11 +259,15 @@ unsigned char* Node::makePacket(std::string ip_src, std::string port_src, std::s
     packet[16] = (unsigned char) (starting_offset >> 8);
     packet[17] = (unsigned char) (starting_offset & 0xFF);
 
-    // Last bit
+    // Fragmented
     packet[18] = (unsigned char) 0;
+
+    // Server bit
+    packet[19] = (unsigned char) 0;
+
     // Message
     for (int i = 0; i < message.length(); i++) {
-        packet[i + 19] = (unsigned char) message[i];
+        packet[i + 20] = (unsigned char) message[i];
     }
     return packet;
 }
@@ -344,9 +356,4 @@ std::pair<int, std::string> Node::checkFragmentArrival(std::vector<unsigned char
         }
     }
     return result;
-}
-
-int Node::allMessageArrived(std::vector<unsigned char *> fragments) {
-    //TODO: revisar si paso el mensaje entero
-    return 0;
 };

@@ -20,7 +20,7 @@
 #define TABLE_MESSAGE 3
 #define SACK_MESSAGE 4
 
-#define HEADER_SIZE 19
+#define HEADER_SIZE 20
 
 #ifndef CC5303_DISTRIBUTED_SYSTEMS_NODE_H
 #define CC5303_DISTRIBUTED_SYSTEMS_NODE_H
@@ -57,6 +57,8 @@ public:
     std::string getSrcIp(const unsigned char* packet);
     std::string getDestIp(const unsigned char* packet);
     std::string getMessage(const unsigned char* packet);
+    int getServerBit(const unsigned char* packet);
+    void setServerBit(unsigned char* packet, int serverBit);
     int getLastBit(const unsigned char* packet);
     int getFragmentBit(const unsigned char* packet);
     uint16_t getTotalLength(const unsigned char* packet);

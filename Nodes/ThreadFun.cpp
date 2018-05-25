@@ -61,7 +61,7 @@ void sendTh(T *n) {
     std::string name;
     std::string ip_src, port_src, ip_dest, port_dest;
     while (1) {
-        if (!n->iAmAServer){
+        if (n->iAmAServer){
             n->serverCond.notify_one();
             std::cout << "See ya soon!" << std::endl;
             return;
@@ -139,7 +139,7 @@ void cServerTh(C *c){
     std::string portDest;
     std::string nameDest;
     while (1){
-        if (c->iAmAServer){
+        if (!c->iAmAServer){
             c->serverCond.notify_one();
             std::cout << "Felt good while being a server" << std::endl;
             return;
@@ -203,6 +203,7 @@ void tServerTh(T* n){
             if (!n->message_queue.empty()) {
                 packet = (n->message_queue).front();
                 (n->message_queue).pop_front();
+                (n->mtx).unlock();
 
                 ipSrc = n->getSrcIp(packet);
                 portSrc = std::to_string(n->getSrcPort(packet));
@@ -231,7 +232,7 @@ void tServerTh(T* n){
                                 n->serverFragmentedPackets[i].second.push_back(packet);
 
                                 std::pair<int, std::string> result = n->checkFragmentArrival(
-                                        n->fragmentedPackets[i].second);
+                                        n->serverFragmentedPackets[i].second);
 
                                 if (result.first) {
                                     std::cout << "Paso el mensaje de " << nameSrc << " para " << nameDest << std::endl;
@@ -244,9 +245,13 @@ void tServerTh(T* n){
                                     n->sendMessage(n->ip, std::to_string(n->port), ipSrc, portSrc, SACK_MESSAGE,
                                                    std::string(""), sd);
 
+                                    std::cout << "Envie SACK a " << nameSrc << std::endl;
+
                                     packet = n->makePacket(std::move(ipSrc), std::move(portSrc), std::move(ipDest), std::move(portDest), CHAT_MESSAGE, result.second);
 
                                     sendFragmentedMessages(n, nameDest, packet);
+
+                                    std::cout << "Envie mensaje a " << nameDest << std::endl;
 
                                     n->serverFragmentedPackets.erase(n->serverFragmentedPackets.begin() + i);
 
@@ -274,7 +279,11 @@ void tServerTh(T* n){
                         n->sendMessage(n->ip, std::to_string(n->port), ipSrc, portSrc, SACK_MESSAGE,
                                        std::string(""), sd);
 
+                        std::cout << "Envie SACK a " << nameSrc << std::endl;
+
                         sendFragmentedMessages(n, nameDest, packet);
+
+                        std::cout << "Envie mensaje a " << nameDest << std::endl;
 
                         n->serverWaitingForAcks.push_back({nameSrc, nameDest});
                     }
@@ -282,8 +291,8 @@ void tServerTh(T* n){
                 } else {
                     int found = 0;
                     for (int i = 0; i < n->serverWaitingForAcks.size(); i++) {
-                        if (nameSrc == n->serverWaitingForAcks[i].first &&
-                            nameDest == n->serverWaitingForAcks[i].second) {
+                        if (nameDest == n->serverWaitingForAcks[i].first &&
+                            nameSrc == n->serverWaitingForAcks[i].second) {
                             std::cout << "Paso ACK de " << nameSrc << " para " << nameDest << std::endl;
                             n->serverWaitingForAcks.erase(n->serverWaitingForAcks.begin() + i);
 
@@ -295,12 +304,16 @@ void tServerTh(T* n){
                             n->sendMessage(n->ip, std::to_string(n->port), ipSrc, portSrc, SACK_MESSAGE,
                                            std::string(""), sd);
 
+                            std::cout << "Envie SACK a " << portSrc << std::endl;
+
                             //send message
                             usefulRouter = n->searchConnectedRouter(nameDest);
                             sd = n->getSocketDescriptor(usefulRouter);
 
                             sleep(n->getDelay(usefulRouter));
                             send(sd, packet, (size_t) n->getTotalLength(packet), 0);
+
+                            std::cout << "Envie ACK a " << nameDest << std::endl;
 
                             found = 1;
 

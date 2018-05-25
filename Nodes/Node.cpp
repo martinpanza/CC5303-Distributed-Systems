@@ -33,6 +33,7 @@ int Node::sendMessage(const std::string ip_src, const std::string port_src,
     return 0;
 }
 
+
 Table* Node::getTable() {
     return &(this->table);
 }
@@ -85,6 +86,14 @@ int Node::getServerBit(const unsigned char* packet) {
 
 void Node::setServerBit(unsigned char* packet, int serverBit) {
     packet[19] = (unsigned char) serverBit;
+}
+
+int Node::getSeqNum(const unsigned char* packet) {
+    return (int) packet[20];
+}
+
+void Node::setSeqNum(unsigned char* packet, int seqNum) {
+    packet[20] = (unsigned char) seqNum;
 }
 
 std::string Node::getSrcIp(const unsigned char* packet) {
@@ -221,6 +230,7 @@ unsigned char* Node::makePacket(std::string ip_src, std::string port_src, std::s
     //splitString(this->ip, ip, '.');
     splitString(ip_src, ip, '.');
     splitString(ip_dest, ip_d, '.');
+
     // Source IP
     for (int i = 0; i < ip.size(); i++) {
         packet[i] = (unsigned char)(stoi(ip[i]));
@@ -232,7 +242,6 @@ unsigned char* Node::makePacket(std::string ip_src, std::string port_src, std::s
     //packet[5] = (unsigned char) (this->port & 0xFF); // lo
     packet[4] = (unsigned char) (sport >> 8); // hi
     packet[5] = (unsigned char) (sport & 0xFF); // lo
-
 
     // Destination IP
     for (int i = 0; i < ip_d.size(); i++) {
@@ -265,9 +274,12 @@ unsigned char* Node::makePacket(std::string ip_src, std::string port_src, std::s
     // Server bit
     packet[19] = (unsigned char) 0;
 
+    // Sequence number
+    packet[20] = (unsigned char) 0;
+
     // Message
     for (int i = 0; i < message.length(); i++) {
-        packet[i + 20] = (unsigned char) message[i];
+        packet[i + 21] = (unsigned char) message[i];
     }
     return packet;
 }
@@ -357,3 +369,10 @@ std::pair<int, std::string> Node::checkFragmentArrival(std::vector<unsigned char
     }
     return result;
 };
+
+unsigned char* Node::makeServerPacket() {
+    std::string ip = this->ip;
+    std::string port = std::to_string(this->port);
+    std::string message = ip + ":" + port;
+    return this->makePacket(this->ip, this->port, "", "", NEW_SRV_MESSAGE, message);
+}

@@ -54,11 +54,13 @@ void cServer(C* c, unsigned char* packet, std::string nameSrc, std::string nameD
                         sleep(c->connections.front().second.first);
                         c->sendMessage(c->ip, std::to_string(c->port), ipSrc, portSrc, SACK_MESSAGE,
                                        std::string(""),
-                                       c->getSocketDescriptor(c->getTable()->direct_routers.front()));
+                                       c->getSocketDescriptor(c->getTable()->direct_routers.front()),
+                                       c->getSeqNum(packet));
                         //send message
                         sleep(c->connections.front().second.first);
                         c->sendMessage(ipSrc, portSrc, ipDest, portDest, CHAT_MESSAGE, result.second,
-                                       c->getSocketDescriptor(c->getTable()->direct_routers.front()));
+                                       c->getSocketDescriptor(c->getTable()->direct_routers.front()),
+                                       c->getSeqNum(packet));
                         c->serverFragmentedPackets.erase(c->serverFragmentedPackets.begin() + i);
 
                         c->serverWaitingForAcks.push_back({nameSrc, nameDest});
@@ -82,7 +84,7 @@ void cServer(C* c, unsigned char* packet, std::string nameSrc, std::string nameD
             sleep(c->connections.front().second.first);
             c->sendMessage(c->ip, std::to_string(c->port), ipSrc, portSrc, SACK_MESSAGE,
                            std::string(""),
-                           c->getSocketDescriptor(c->getTable()->direct_routers.front()));
+                           c->getSocketDescriptor(c->getTable()->direct_routers.front()), c->getSeqNum(packet));
 
             //Send Packet
             while(c->getTotalLength(packet) > c->connections.front().second.second){
@@ -107,7 +109,7 @@ void cServer(C* c, unsigned char* packet, std::string nameSrc, std::string nameD
                 sleep(c->connections.front().second.first);
                 c->sendMessage(c->ip, std::to_string(c->port), ipSrc, portSrc, SACK_MESSAGE,
                                std::string(""),
-                               c->getSocketDescriptor(c->getTable()->direct_routers.front()));
+                               c->getSocketDescriptor(c->getTable()->direct_routers.front()), c->getSeqNum(packet));
 
                 //Send packet
                 sleep(c->connections.front().second.first);
@@ -140,7 +142,8 @@ void cClient(C* c, unsigned char* packet, std::string nameSrc, std::string ipSrc
                         sleep((unsigned int) c->connections.front().second.first);
                         c->sendMessage(c->ip, std::to_string(c->port), ipSrc, portSrc, ACK_MESSAGE,
                                        std::string(""),
-                                       c->getSocketDescriptor(c->getTable()->direct_routers.front()));
+                                       c->getSocketDescriptor(c->getTable()->direct_routers.front()),
+                                       c->getSeqNum(packet));
                         c->fragmentedPackets.erase(c->fragmentedPackets.begin() + i);
                         c->sentAcks.insert(std::pair<std::string, int>(std::to_string('test'),1));
                     }
@@ -159,7 +162,7 @@ void cClient(C* c, unsigned char* packet, std::string nameSrc, std::string ipSrc
             std::cout << "Llego mensaje de " << nameSrc << "->" << c->getMessage(packet) << std::endl;
             sleep((unsigned int) c->connections.front().second.first);
             c->sendMessage(c->ip, std::to_string(c->port), ipSrc, portSrc, ACK_MESSAGE, std::string(""),
-                           c->getSocketDescriptor(c->getTable()->direct_routers.front()));
+                           c->getSocketDescriptor(c->getTable()->direct_routers.front()), c->getSeqNum(packet));
             c->sentAcks.insert(std::pair<std::string, int>(std::to_string('test'),1));
         }
     } else if (c->getType(packet) == SACK_MESSAGE) {

@@ -79,8 +79,9 @@ public:
 
     void printPacket(const unsigned char* packet);
     unsigned char* makePacket(std::string ip_src, std::string port_src, std::string ip_dest,
-                              std::string port_dest, int type, std::string message);
-    virtual int sendMessage(std::string ip_src, std::string port_src, std::string ip_dest, std::string port_dest, int type, std::string message, int sd);
+                              std::string port_dest, int type, std::string message, int sequenceNumber);
+    virtual int sendMessage(std::string ip_src, std::string port_src, std::string ip_dest, std::string port_dest,
+                            int type, std::string message, int sd, int sequenceNumber);
     int getSocketDescriptor(std::string basic_string);
     int getDelay(std::string basic_string);
 

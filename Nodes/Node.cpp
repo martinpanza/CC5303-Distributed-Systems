@@ -27,7 +27,7 @@ int Node::run() {
 
 int Node::sendMessage(const std::string ip_src, const std::string port_src,
                       const std::string ip_dest, const std::string port_dest,
-                      const int type, const std::string message, const int sd) {
+                      const int type, const std::string message, const int sd, int sequenceNumber) {
     std::cout << ip_src << ":" << port_src << std::endl;
     std::cout << ip_dest << ":" << port_dest << " " << type << " " << message;
     return 0;
@@ -198,8 +198,10 @@ std::pair<unsigned char *, unsigned char*> Node::fragment(unsigned char* packet,
             bot_message = message.substr(top_message_size);
 
 
-    unsigned char* top_packet = this->makePacket(ip_src, port_src, ip_dest, port_dest, type, top_message);
-    unsigned char* bot_packet = this->makePacket(ip_src, port_src, ip_dest, port_dest, type, bot_message);
+    unsigned char* top_packet = this->makePacket(ip_src, port_src, ip_dest, port_dest,
+                                                 type, top_message, this->getSeqNum(packet));
+    unsigned char* bot_packet = this->makePacket(ip_src, port_src, ip_dest, port_dest,
+                                                 type, bot_message, this->getSeqNum(packet));
 
     if (!this->getFragmentBit(packet)){
         this->setLastBit(bot_packet, 1);
@@ -223,7 +225,7 @@ std::pair<unsigned char *, unsigned char*> Node::fragment(unsigned char* packet,
 
 
 unsigned char* Node::makePacket(std::string ip_src, std::string port_src, std::string ip_dest,
-                                std::string port_dest, int type, std::string message) {
+                                std::string port_dest, int type, std::string message, int sequenceNumber) {
     auto packet = (unsigned char*) malloc((HEADER_SIZE + message.length()) * sizeof(unsigned char));
 
     std::vector<std::string> ip, ip_d;
@@ -275,7 +277,7 @@ unsigned char* Node::makePacket(std::string ip_src, std::string port_src, std::s
     packet[19] = (unsigned char) 0;
 
     // Sequence number
-    packet[20] = (unsigned char) 0;
+    packet[20] = (unsigned char) sequenceNumber;
 
     // Message
     for (int i = 0; i < message.length(); i++) {

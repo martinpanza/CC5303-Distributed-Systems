@@ -118,7 +118,8 @@ void T::broadcastTable() {
     std::vector<std::string> ipport;
     for (std::string router : (*directRouters)) {
         splitString(router, ipport, ':');
-        this->sendMessage(this->ip, std::to_string(this->port), ipport[0], ipport[1], TABLE_MESSAGE, this->makeTableMessage(), this->getSocketDescriptor(router));
+        this->sendMessage(this->ip, std::to_string(this->port), ipport[0], ipport[1], TABLE_MESSAGE,
+                          this->makeTableMessage(), this->getSocketDescriptor(router), 255);
     }
 }
 
@@ -127,7 +128,7 @@ void T::shareTable(std::string ip, std::string port, int sd) {
         //std::cout << "sharetable" << std::endl;
         //std::cout << this->makeTableMessage() << std::endl;
         this->sendMessage(this->ip, std::to_string(this->port), std::move(ip), std::move(port),
-                          TABLE_MESSAGE, this->makeTableMessage(), sd);
+                          TABLE_MESSAGE, this->makeTableMessage(), sd, 255);
     }
 }
 
@@ -213,9 +214,11 @@ void T::addConnection(std::string ip, std::string port, std::string type) {
     this->connections.push_back(P);
 }
 
-int T::sendMessage(std::string ip_src, std::string port_src, std::string ip_dest, std::string port_dest, int type, std::string message, int sd) {
+int T::sendMessage(std::string ip_src, std::string port_src, std::string ip_dest, std::string port_dest, int type,
+                   std::string message, int sd, int sequenceNumber) {
     // std::cout << "sending message..." << std::endl;
-    unsigned char* packet = this->makePacket(std::move(ip_src), std::move(port_src), std::move(ip_dest), std::move(port_dest), type, message);
+    unsigned char* packet = this->makePacket(std::move(ip_src), std::move(port_src), std::move(ip_dest),
+                                             std::move(port_dest), type, message, sequenceNumber);
     auto totalLength = (size_t) this->getTotalLength(packet);
     send(sd, packet, totalLength, 0);
     return 0;

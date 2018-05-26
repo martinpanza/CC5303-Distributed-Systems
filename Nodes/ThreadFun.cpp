@@ -227,37 +227,42 @@ void tServerTh(T* n){
                         int found = 0;
                         for (int i = 0; i < n->serverFragmentedPackets.size(); i++) {
                             if (nameSrc == n->serverFragmentedPackets[i].first.first &&
-                                nameDest == n->serverFragmentedPackets[i].first.second
-                                // && TODO: ver que el mensaje no este en la lista de ACK que se esperan
-                                    ) {
-                                n->serverFragmentedPackets[i].second.push_back(packet);
+                                nameDest == n->serverFragmentedPackets[i].first.second) {
 
-                                std::pair<int, std::string> result = n->checkFragmentArrival(
-                                        n->serverFragmentedPackets[i].second);
+                                if (n->getSeqNum(packet) == n->serverFragmentedPackets[i].second.first) {
 
-                                if (result.first) {
-                                    std::cout << "Paso el mensaje de " << nameSrc << " para " << nameDest << std::endl;
+                                    n->serverFragmentedPackets[i].second.second.push_back(packet);
 
-                                    usefulRouter = n->searchConnectedRouter(nameSrc);
-                                    sd = n->getSocketDescriptor(usefulRouter);
+                                    std::pair<int, std::string> result = n->checkFragmentArrival(
+                                            n->serverFragmentedPackets[i].second.second);
 
-                                    //send ack
-                                    sleep(n->getDelay(usefulRouter));
-                                    n->sendMessage(n->ip, std::to_string(n->port), ipSrc, portSrc, SACK_MESSAGE,
-                                                   std::string(""), sd, n->getSeqNum(packet));
+                                    if (result.first) {
+                                        std::cout << "Paso el mensaje de " << nameSrc << " para " << nameDest
+                                                  << std::endl;
 
-                                    std::cout << "Envie SACK a " << nameSrc << std::endl;
+                                        usefulRouter = n->searchConnectedRouter(nameSrc);
+                                        sd = n->getSocketDescriptor(usefulRouter);
 
-                                    packet = n->makePacket(std::move(ipSrc), std::move(portSrc), std::move(ipDest),
-                                                           std::move(portDest), CHAT_MESSAGE, result.second, n->getSeqNum(packet));
+                                        //send ack
+                                        sleep(n->getDelay(usefulRouter));
+                                        n->sendMessage(n->ip, std::to_string(n->port), ipSrc, portSrc, SACK_MESSAGE,
+                                                       std::string(""), sd, n->getSeqNum(packet));
 
-                                    sendFragmentedMessages(n, nameDest, packet);
+                                        std::cout << "Envie SACK a " << nameSrc << std::endl;
 
-                                    std::cout << "Envie mensaje a " << nameDest << std::endl;
+                                        packet = n->makePacket(std::move(ipSrc), std::move(portSrc), std::move(ipDest),
+                                                               std::move(portDest), CHAT_MESSAGE, result.second,
+                                                               n->getSeqNum(packet));
 
-                                    n->serverFragmentedPackets.erase(n->serverFragmentedPackets.begin() + i);
+                                        sendFragmentedMessages(n, nameDest, packet);
 
-                                    n->serverWaitingForAcks.push_back({nameSrc, nameDest});
+                                        std::cout << "Envie mensaje a " << nameDest << std::endl;
+
+                                        n->serverFragmentedPackets.erase(n->serverFragmentedPackets.begin() + i);
+
+                                        n->serverWaitingForAcks.push_back({nameSrc, nameDest});
+                                    }
+
                                 }
 
                                 found = 1;
@@ -267,7 +272,7 @@ void tServerTh(T* n){
                         if (found == 0) {
                             std::vector<unsigned char *> v;
                             v.push_back(packet);
-                            std::pair<std::pair<std::string, std::string>, std::vector<unsigned char *>> newFragmentedPacket = {{nameSrc, nameDest}, v};
+                            std::pair<std::pair<std::string, std::string>, std::pair<int, std::vector<unsigned char *>>> newFragmentedPacket = {{nameSrc, nameDest}, {n->getSeqNum(packet) ,v}};
                             n->serverFragmentedPackets.push_back(newFragmentedPacket);
                         }
                     } else {

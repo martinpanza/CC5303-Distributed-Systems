@@ -90,7 +90,6 @@ int C::run() {
             this->sentMessage = m;
             this->waitingForSack = 1;
             this->waitingForAck = 1;
-            this->currentSequenceNumber = (this->currentSequenceNumber + 1) % 128;
 
             std::unique_lock<std::mutex> lk(this->listen_mutex);
             this->cond.wait(lk);
@@ -119,4 +118,8 @@ int C::run() {
             cProcessor.detach();
         }
     }
+}
+
+void C::increaseSequenceNumber() {
+    this->currentSequenceNumber = (this->currentSequenceNumber + 1) % 128;
 }

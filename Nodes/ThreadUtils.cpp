@@ -40,30 +40,32 @@ void cServer(C* c, unsigned char* packet, std::string nameSrc, std::string nameD
             int found = 0;
             for (int i = 0; i < c->serverFragmentedPackets.size(); i++) {
                 if (nameSrc == c->serverFragmentedPackets[i].first.first &&
-                    nameDest == c->serverFragmentedPackets[i].first.second
-                    // && TODO: ver que el mensaje no este en la lista de ACK que se esperan
-                        ) {
-                    c->serverFragmentedPackets[i].second.push_back(packet);
+                    nameDest == c->serverFragmentedPackets[i].first.second) {
 
-                    std::pair<int, std::string> result = c->checkFragmentArrival(
-                            c->fragmentedPackets[i].second);
+                    if (c->getSeqNum(packet) == c->serverFragmentedPackets[i].second.first) {
 
-                    if (result.first) {
-                        std::cout << "Paso el mensaje de " << nameSrc << " para " << nameDest << std::endl;
-                        //send ack
-                        sleep(c->connections.front().second.first);
-                        c->sendMessage(c->ip, std::to_string(c->port), ipSrc, portSrc, SACK_MESSAGE,
-                                       std::string(""),
-                                       c->getSocketDescriptor(c->getTable()->direct_routers.front()),
-                                       c->getSeqNum(packet));
-                        //send message
-                        sleep(c->connections.front().second.first);
-                        c->sendMessage(ipSrc, portSrc, ipDest, portDest, CHAT_MESSAGE, result.second,
-                                       c->getSocketDescriptor(c->getTable()->direct_routers.front()),
-                                       c->getSeqNum(packet));
-                        c->serverFragmentedPackets.erase(c->serverFragmentedPackets.begin() + i);
+                        c->serverFragmentedPackets[i].second.second.push_back(packet);
 
-                        c->serverWaitingForAcks.push_back({nameSrc, nameDest});
+                        std::pair<int, std::string> result = c->checkFragmentArrival(
+                                c->fragmentedPackets[i].second);
+
+                        if (result.first) {
+                            std::cout << "Paso el mensaje de " << nameSrc << " para " << nameDest << std::endl;
+                            //send ack
+                            sleep(c->connections.front().second.first);
+                            c->sendMessage(c->ip, std::to_string(c->port), ipSrc, portSrc, SACK_MESSAGE,
+                                           std::string(""),
+                                           c->getSocketDescriptor(c->getTable()->direct_routers.front()),
+                                           c->getSeqNum(packet));
+                            //send message
+                            sleep(c->connections.front().second.first);
+                            c->sendMessage(ipSrc, portSrc, ipDest, portDest, CHAT_MESSAGE, result.second,
+                                           c->getSocketDescriptor(c->getTable()->direct_routers.front()),
+                                           c->getSeqNum(packet));
+                            c->serverFragmentedPackets.erase(c->serverFragmentedPackets.begin() + i);
+
+                            c->serverWaitingForAcks.push_back({nameSrc, nameDest});
+                        }
                     }
 
                     found = 1;
@@ -73,7 +75,7 @@ void cServer(C* c, unsigned char* packet, std::string nameSrc, std::string nameD
             if (found == 0) {
                 std::vector<unsigned char *> v;
                 v.push_back(packet);
-                std::pair<std::pair<std::string, std::string>, std::vector<unsigned char *>> newFragmentedPacket = {{nameSrc, nameDest}, v};
+                std::pair<std::pair<std::string, std::string>, std::pair<int, std::vector<unsigned char *>>> newFragmentedPacket = {{nameSrc, nameDest}, {c->getSeqNum(packet) ,v}};
                 c->serverFragmentedPackets.push_back(newFragmentedPacket);
             }
         } else {

@@ -14,6 +14,7 @@
 #include <vector>
 #include <sys/socket.h>
 #include <stdlib.h>
+#include <map>
 
 #define ACK_MESSAGE 1
 #define CHAT_MESSAGE 2
@@ -89,7 +90,7 @@ public:
     std::pair<unsigned char *, unsigned char*> fragment(unsigned char* packet, int MTU);
 
     std::vector<std::pair<std::string, std::vector<unsigned char *>>> fragmentedPackets;
-    std::vector<std::pair<std::pair<std::string, std::string>, std::vector<unsigned char *>>> serverFragmentedPackets;
+    std::vector<std::pair<std::pair<std::string, std::string>, std::pair<int, std::vector<unsigned char *>>>> serverFragmentedPackets;
     std::vector<std::pair<std::string, std::string>> serverWaitingForAcks;
     std::pair<int, std::string> checkFragmentArrival(std::vector<unsigned char *> fragments);
 

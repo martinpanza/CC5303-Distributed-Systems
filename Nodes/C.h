@@ -14,10 +14,12 @@ class C : public Node{
 public:
     int waitingForAck = 0;
     int waitingForSack = 0;
+    int currentSequenceNumber = 0;
     std::string sentMessage = "";
     std::map<std::string, int> sentAcks;
     int run() override;
-    int sendMessage(std::string ip_src, std::string port_src, std::string ip_dest, std::string port_dest, int type, std::string message, int sd) override;
+    int sendMessage(std::string ip_src, std::string port_src, std::string ip_dest, std::string port_dest, int type,
+                    std::string message, int sd, int sequenceNumber) override;
     void addConnection(std::string ip, std::string port);
 };
 

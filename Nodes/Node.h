@@ -19,7 +19,7 @@
 #define CHAT_MESSAGE 2
 #define TABLE_MESSAGE 3
 #define SACK_MESSAGE 4
-#define NEW_SRV_MESSAGE
+#define NEW_SRV_MESSAGE 5
 
 #define HEADER_SIZE 21
 
@@ -93,6 +93,8 @@ public:
     std::pair<int, std::string> checkFragmentArrival(std::vector<unsigned char *> fragments);
 
     int allMessageArrived(std::vector<unsigned char *> fragments);
+
+    void announceServer(std::string message);
 
     int partition (std::vector<unsigned char*>* fragments, int low, int high);
     void quickSort(std::vector<unsigned char*>* fragments, int low, int high);

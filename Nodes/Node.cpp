@@ -370,9 +370,12 @@ std::pair<int, std::string> Node::checkFragmentArrival(std::vector<unsigned char
     return result;
 };
 
-unsigned char* Node::makeServerPacket() {
-    std::string ip = this->ip;
-    std::string port = std::to_string(this->port);
-    std::string message = ip + ":" + port;
-    return this->makePacket(this->ip, this->port, "", "", NEW_SRV_MESSAGE, message);
+void Node::announceServer(std::string message) {
+    std::vector<std::string>* directRouters =(this->getTable())->getDirectRouters();
+    std::vector<std::string> ipport;
+    for (std::string router : (*directRouters)) {
+        splitString(router, ipport, ':');
+        this->sendMessage(this->ip, std::to_string(this->port), ipport[0], ipport[1], NEW_SRV_MESSAGE, message, this->getSocketDescriptor(router));
+
+    }
 }

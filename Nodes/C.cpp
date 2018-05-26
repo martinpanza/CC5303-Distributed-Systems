@@ -99,6 +99,8 @@ int C::run() {
             this->serverCond.wait(lk);
             lk.unlock();
 
+            this->announceServer(this->ip + ":" + std::to_string(this->port));
+
             std::thread server (cServerTh, this);
             server.detach();
 

@@ -138,6 +138,7 @@ void cServerTh(C *c){
     std::string ipDest;
     std::string portDest;
     std::string nameDest;
+
     while (1){
         if (!c->iAmAServer){
             c->serverCond.notify_one();

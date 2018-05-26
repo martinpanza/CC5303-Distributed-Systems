@@ -377,7 +377,13 @@ void Node::announceServer(std::string message) {
     std::vector<std::string> ipport;
     for (std::string router : (*directRouters)) {
         splitString(router, ipport, ':');
-        this->sendMessage(this->ip, std::to_string(this->port), ipport[0], ipport[1], NEW_SRV_MESSAGE, message, this->getSocketDescriptor(router));
-
+        this->sendMessage(this->ip, std::to_string(this->port), ipport[0], ipport[1], NEW_SRV_MESSAGE, message, this->getSocketDescriptor(router), 0);
     }
 }
+
+void Node::processServerMessage(const unsigned char* packet) {
+
+}
+
+
+

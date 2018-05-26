@@ -9,6 +9,8 @@
 
 class Table {
 public:
+    std::vector<std::string> noticedRouters;
+
     std::vector<std::string> direct_clients;
     std::vector<std::string> direct_routers;
     // Cliente, <Caminos posibles>

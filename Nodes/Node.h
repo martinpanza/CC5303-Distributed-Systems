@@ -96,6 +96,7 @@ public:
     int allMessageArrived(std::vector<unsigned char *> fragments);
 
     void announceServer(std::string message);
+    void processServerMessage(const unsigned char* packet);
 
     int partition (std::vector<unsigned char*>* fragments, int low, int high);
     void quickSort(std::vector<unsigned char*>* fragments, int low, int high);

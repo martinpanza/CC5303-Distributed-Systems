@@ -121,3 +121,15 @@ int C::run() {
 void C::increaseSequenceNumber() {
     this->currentSequenceNumber = (this->currentSequenceNumber + 1) % 128;
 }
+
+int C::sendPacket(unsigned char *packet) {
+    while(this->getTotalLength(packet) > this->connections.front().second.second){
+        std::pair<unsigned char*, unsigned char*> f_packets = this->fragment(packet, this->connections.front().second.second);
+        sleep(this->connections.front().second.first);
+        send(this->getSocketDescriptor(this->getTable()->direct_routers.front()), f_packets.first, (size_t) this->getTotalLength(f_packets.first), 0);
+        packet = f_packets.second;
+    }
+    sleep(this->connections.front().second.first);
+    send(this->getSocketDescriptor(this->getTable()->direct_routers.front()), packet, (size_t) this->getTotalLength(packet), 0);
+    return 0;
+}

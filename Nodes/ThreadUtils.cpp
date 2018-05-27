@@ -9,6 +9,7 @@
 #include <iostream>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <algorithm>
 
 void copyBuffer(const char* buffer, char** to, int size) {
     for (int i = 0; i < size; i++) {
@@ -35,69 +36,78 @@ void cServer(C* c, unsigned char* packet, std::string nameSrc, std::string nameD
 
 
     if (c->getType(packet) == CHAT_MESSAGE) {
+       if (std::find(c->serverWaitingForAcks.begin(), c->serverWaitingForAcks.end(), std::pair<std::string,
+               std::string> {nameSrc, nameDest}) != c->serverWaitingForAcks.end()){
+           c->sendPacket(packet);
+       } else {
+           if (c->getFragmentBit(packet)) {
+               int found = 0;
+               for (int i = 0; i < c->serverFragmentedPackets.size(); i++) {
+                   if (nameSrc == c->serverFragmentedPackets[i].first.first &&
+                       nameDest == c->serverFragmentedPackets[i].first.second) {
 
-        if (c->getFragmentBit(packet)) {
-            int found = 0;
-            for (int i = 0; i < c->serverFragmentedPackets.size(); i++) {
-                if (nameSrc == c->serverFragmentedPackets[i].first.first &&
-                    nameDest == c->serverFragmentedPackets[i].first.second) {
+                       if (c->getSeqNum(packet) == c->serverFragmentedPackets[i].second.first) {
 
-                    if (c->getSeqNum(packet) == c->serverFragmentedPackets[i].second.first) {
+                           c->serverFragmentedPackets[i].second.second.push_back(packet);
 
-                        c->serverFragmentedPackets[i].second.second.push_back(packet);
+                           std::pair<int, std::string> result = c->checkFragmentArrival(
+                                   c->fragmentedPackets[i].second);
 
-                        std::pair<int, std::string> result = c->checkFragmentArrival(
-                                c->fragmentedPackets[i].second);
+                           if (result.first) {
+                               std::cout << "Paso el mensaje de " << nameSrc << " para " << nameDest << std::endl;
+                               //send ack
+                               sleep(c->connections.front().second.first);
+                               c->sendMessage(c->ip, std::to_string(c->port), ipSrc, portSrc, SACK_MESSAGE,
+                                              std::string(""),
+                                              c->getSocketDescriptor(c->getTable()->direct_routers.front()),
+                                              c->getSeqNum(packet));
+                               //send message
+                               sleep(c->connections.front().second.first);
+                               c->sendMessage(ipSrc, portSrc, ipDest, portDest, CHAT_MESSAGE, result.second,
+                                              c->getSocketDescriptor(c->getTable()->direct_routers.front()),
+                                              c->getSeqNum(packet));
+                               c->serverFragmentedPackets.erase(c->serverFragmentedPackets.begin() + i);
 
-                        if (result.first) {
-                            std::cout << "Paso el mensaje de " << nameSrc << " para " << nameDest << std::endl;
-                            //send ack
-                            sleep(c->connections.front().second.first);
-                            c->sendMessage(c->ip, std::to_string(c->port), ipSrc, portSrc, SACK_MESSAGE,
-                                           std::string(""),
-                                           c->getSocketDescriptor(c->getTable()->direct_routers.front()),
-                                           c->getSeqNum(packet));
-                            //send message
-                            sleep(c->connections.front().second.first);
-                            c->sendMessage(ipSrc, portSrc, ipDest, portDest, CHAT_MESSAGE, result.second,
-                                           c->getSocketDescriptor(c->getTable()->direct_routers.front()),
-                                           c->getSeqNum(packet));
-                            c->serverFragmentedPackets.erase(c->serverFragmentedPackets.begin() + i);
+                               c->serverWaitingForAcks.push_back({nameSrc, nameDest});
+                           }
+                       }
 
-                            c->serverWaitingForAcks.push_back({nameSrc, nameDest});
-                        }
-                    }
+                       found = 1;
+                       break;
+                   }
+               }
+               if (found == 0) {
+                   std::vector<unsigned char *> v;
+                   v.push_back(packet);
+                   std::pair<std::pair<std::string, std::string>, std::pair<int, std::vector<unsigned char *>>> newFragmentedPacket = {{nameSrc,        nameDest},
+                                                                                                                                       {c->getSeqNum(
+                                                                                                                                               packet), v}};
+                   c->serverFragmentedPackets.push_back(newFragmentedPacket);
+               }
+           } else {
+               std::cout << "Paso mensaje de " << nameSrc << " para " << nameDest << std::endl;
+               c->serverWaitingForAcks.push_back({nameSrc, nameDest});
 
-                    found = 1;
-                    break;
-                }
-            }
-            if (found == 0) {
-                std::vector<unsigned char *> v;
-                v.push_back(packet);
-                std::pair<std::pair<std::string, std::string>, std::pair<int, std::vector<unsigned char *>>> newFragmentedPacket = {{nameSrc, nameDest}, {c->getSeqNum(packet) ,v}};
-                c->serverFragmentedPackets.push_back(newFragmentedPacket);
-            }
-        } else {
-            std::cout << "Paso mensaje de " << nameSrc << " para " << nameDest << std::endl;
-            c->serverWaitingForAcks.push_back({nameSrc, nameDest});
+               //send ack
+               sleep(c->connections.front().second.first);
+               c->sendMessage(c->ip, std::to_string(c->port), ipSrc, portSrc, SACK_MESSAGE,
+                              std::string(""),
+                              c->getSocketDescriptor(c->getTable()->direct_routers.front()), c->getSeqNum(packet));
 
-            //send ack
-            sleep(c->connections.front().second.first);
-            c->sendMessage(c->ip, std::to_string(c->port), ipSrc, portSrc, SACK_MESSAGE,
-                           std::string(""),
-                           c->getSocketDescriptor(c->getTable()->direct_routers.front()), c->getSeqNum(packet));
+               //Send Packet
+               /*
+               while(c->getTotalLength(packet) > c->connections.front().second.second){
+                   std::pair<unsigned char*, unsigned char*> f_packets = c->fragment(packet, c->connections.front().second.second);
+                   sleep(c->connections.front().second.first);
+                   send(c->getSocketDescriptor(c->getTable()->direct_routers.front()), f_packets.first, (size_t) c->getTotalLength(f_packets.first), 0);
+                   packet = f_packets.second;
+               }
+               sleep(c->connections.front().second.first);
+               send(c->getSocketDescriptor(c->getTable()->direct_routers.front()), packet, (size_t) c->getTotalLength(packet), 0);*/
 
-            //Send Packet
-            while(c->getTotalLength(packet) > c->connections.front().second.second){
-                std::pair<unsigned char*, unsigned char*> f_packets = c->fragment(packet, c->connections.front().second.second);
-                sleep(c->connections.front().second.first);
-                send(c->getSocketDescriptor(c->getTable()->direct_routers.front()), f_packets.first, (size_t) c->getTotalLength(f_packets.first), 0);
-                packet = f_packets.second;
-            }
-            sleep(c->connections.front().second.first);
-            send(c->getSocketDescriptor(c->getTable()->direct_routers.front()), packet, (size_t) c->getTotalLength(packet), 0);
-        }
+               c->sendPacket(packet);
+           }
+       }
 
     } else {
         int found = 0;
@@ -123,7 +133,10 @@ void cServer(C* c, unsigned char* packet, std::string nameSrc, std::string nameD
         }
 
         if (!found){
-            std::cout << "????" << std::endl;
+            //send it anyway
+            std::cout << "unknown ACK, letting it pass anyway" << std::endl;
+            sleep(c->connections.front().second.first);
+            send(c->getSocketDescriptor(c->getTable()->direct_routers.front()), packet, (size_t) c->getTotalLength(packet), 0);
         }
     }
 }
@@ -172,11 +185,16 @@ void cClient(C* c, unsigned char* packet, std::string nameSrc, std::string ipSrc
         c->sentAcks.erase(std::to_string('test'));
         std::cout << "Su mensaje ha llegado al servidor" << std::endl;
     } else {
-        c->waitingForSack = 0;
-        c->waitingForAck = 0;
-        c->sentMessage = "";
-        std::cout << "Su mensaje ha sido recibido" << std::endl;
-        c->cond.notify_one();
+        if (c->getSeqNum(packet) == c->currentSequenceNumber){
+            c->waitingForSack = 0;
+            c->waitingForAck = 0;
+            c->sentMessage = "";
+            std::cout << "Su mensaje ha sido recibido" << std::endl;
+            c->increaseSequenceNumber();
+            c->cond.notify_one();
+        } else {
+            //ignore
+        }
     }
 }
 

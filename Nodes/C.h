@@ -20,6 +20,7 @@ public:
     int run() override;
     int sendMessage(std::string ip_src, std::string port_src, std::string ip_dest, std::string port_dest, int type,
                     std::string message, int sd, int sequenceNumber) override;
+    int sendPacket(unsigned char* packet);
     void addConnection(std::string ip, std::string port);
     void increaseSequenceNumber();
 };

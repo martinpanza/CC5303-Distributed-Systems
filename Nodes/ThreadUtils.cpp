@@ -91,7 +91,7 @@ void cServer(C* c, unsigned char* packet, std::string nameSrc, std::string nameD
                //send ack
                sleep(c->connections.front().second.first);
                c->sendMessage(c->ip, std::to_string(c->port), ipSrc, portSrc, SACK_MESSAGE,
-                              std::string(""),
+                              nameDest,
                               c->getSocketDescriptor(c->getTable()->direct_routers.front()), c->getSeqNum(packet));
 
                //Send Packet
@@ -112,8 +112,8 @@ void cServer(C* c, unsigned char* packet, std::string nameSrc, std::string nameD
     } else {
         int found = 0;
         for (int i = 0; i < c->serverWaitingForAcks.size(); i++) {
-            if (nameSrc == c->serverWaitingForAcks[i].first &&
-                nameDest == c->serverWaitingForAcks[i].second) {
+            if (nameDest == c->serverWaitingForAcks[i].first &&
+                nameSrc == c->serverWaitingForAcks[i].second) {
                 std::cout << "Paso ACK de " << nameSrc << " para " << nameDest << std::endl;
                 c->serverWaitingForAcks.erase(c->serverWaitingForAcks.begin() + i);
 
@@ -160,7 +160,7 @@ void cClient(C* c, unsigned char* packet, std::string nameSrc, std::string ipSrc
                                        c->getSocketDescriptor(c->getTable()->direct_routers.front()),
                                        c->getSeqNum(packet));
                         c->fragmentedPackets.erase(c->fragmentedPackets.begin() + i);
-                        c->sentAcks.insert(std::pair<std::string, int>(std::to_string('test'),1));
+                        c->sentAcks.push_back(std::pair<std::string, int> {nameSrc, c->getSeqNum(packet)});
                     }
 
                     found = 1;
@@ -178,17 +178,42 @@ void cClient(C* c, unsigned char* packet, std::string nameSrc, std::string ipSrc
             sleep((unsigned int) c->connections.front().second.first);
             c->sendMessage(c->ip, std::to_string(c->port), ipSrc, portSrc, ACK_MESSAGE, std::string(""),
                            c->getSocketDescriptor(c->getTable()->direct_routers.front()), c->getSeqNum(packet));
-            c->sentAcks.insert(std::pair<std::string, int>(std::to_string('test'),1));
+            c->sentAcks.push_back(std::pair<std::string, int> {nameSrc, c->getSeqNum(packet)});
         }
     } else if (c->getType(packet) == SACK_MESSAGE) {
-        c->waitingForSack = 0;
-        c->sentAcks.erase(std::to_string('test'));
-        std::cout << "Su mensaje ha llegado al servidor" << std::endl;
+        if (c->getMessage(packet) == "") {
+            c->waitingForSack = 0;
+            std::cout << "Su mensaje ha llegado al servidor" << std::endl;
+        } else {
+            for (int i = 0; i < c->sentAcks.size(); i++) {
+                if (c->getMessage(packet) == c->sentAcks[i].first){
+                    std::cout << "Su ACK para " << c->getMessage(packet) << "ha llegado al servidor" << std::endl;
+                    c->sentAcks.erase(c->sentAcks.begin() + i);
+                }
+            }
+        }
+    } else if (c->getType(packet) == RESEND_MESSAGE) {
+        if (c->waitingForSack){
+            c->increaseSequenceNumber();
+            c->sendMessage(c->ip, std::to_string(c->port), c->ipSent, c->portSent,
+                              CHAT_MESSAGE, c->sentMessage,
+                           c->getSocketDescriptor(c->getTable()->direct_routers.front()), c->currentSequenceNumber);
+        }
+        for (int i = 0; i < c->sentAcks.size(); i++) {
+            std::vector<std::string> split;
+            splitString(c->sentAcks[i].first, split, ':');
+            c->sendMessage(c->ip, std::to_string(c->port), split[0], split[1],
+                           ACK_MESSAGE, "",
+                           c->getSocketDescriptor(c->getTable()->direct_routers.front()), c->sentAcks[i].second);
+        }
+
     } else {
         if (c->getSeqNum(packet) == c->currentSequenceNumber){
             c->waitingForSack = 0;
             c->waitingForAck = 0;
             c->sentMessage = "";
+            c->ipSent = "";
+            c->portSent = "";
             std::cout << "Su mensaje ha sido recibido" << std::endl;
             c->increaseSequenceNumber();
             c->cond.notify_one();
@@ -212,4 +237,54 @@ void sendFragmentedMessages(T* n, std::string nameDest, unsigned char* packet){
     }
     sleep(n->getDelay(usefulRouter));
     send(sd, packet, (size_t) n->getTotalLength(packet), 0);
+}
+
+std::vector<std::string> getResendList(Node* n){
+    std::string nameSrc;
+    std::vector<std::string> resend;
+    for (auto element: n->serverFragmentedPackets){
+        resend.push_back(element.first.first);
+    }
+    for (auto element: n->serverWaitingForAcks){
+        resend.push_back(element.second);
+    }
+    resend.erase( unique( resend.begin(), resend.end() ), resend.end() );
+    return resend;
+}
+
+void tSendResendMessages(std::vector<std::string> resend, T* n){
+    std::string usefulRouter;
+    std::vector<std::string> split;
+    int sd;
+    for (auto nameSrc: resend){
+        usefulRouter = n->searchConnectedRouter(nameSrc);
+        sd = n->getSocketDescriptor(usefulRouter);
+
+        splitString(nameSrc, split, ':');
+
+        sleep(n->getDelay(usefulRouter));
+        n->sendMessage(n->ip, std::to_string(n->port), split[0], split[1], RESEND_MESSAGE,
+                       std::string(""), sd, 0);
+    }
+}
+
+void cSendResendMessages(std::vector<std::string> resend, C* c){
+    std::string usefulRouter;
+    std::vector<std::string> split;
+    for (auto nameSrc: resend){
+        splitString(nameSrc, split, ':');
+
+        sleep(c->connections.front().second.first);
+        c->sendMessage(c->ip, std::to_string(c->port), split[0], split[1], RESEND_MESSAGE,
+                       std::string(""),
+                       c->getSocketDescriptor(c->getTable()->direct_routers.front()),
+                       0);
+    }
+}
+
+void increaseExpectedSeqNumber(Node *n) {
+    for (auto element: n->serverFragmentedPackets){
+        element.second.first = (element.second.first + 1) %  MAX_SEQ_NUMBER;
+        element.second.second.clear();
+    }
 }

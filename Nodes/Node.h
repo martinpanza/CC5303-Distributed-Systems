@@ -20,9 +20,12 @@
 #define CHAT_MESSAGE 2
 #define TABLE_MESSAGE 3
 #define SACK_MESSAGE 4
-#define NEW_SRV_MESSAGE
+#define NEW_SRV_MESSAGE 5
+#define RESEND_MESSAGE 6
 
 #define HEADER_SIZE 21
+
+#define MAX_SEQ_NUMBER 128
 
 #ifndef CC5303_DISTRIBUTED_SYSTEMS_NODE_H
 #define CC5303_DISTRIBUTED_SYSTEMS_NODE_H
@@ -44,6 +47,7 @@ public:
     std::string serverName;
 
     int iAmAServer = 0;
+    int off = 0;
 
     Table table;
     std::string ip;

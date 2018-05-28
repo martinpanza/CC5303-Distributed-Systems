@@ -16,3 +16,4 @@ void sendTh(T* n);
 void cProcessTh(C*n);
 void cServerTh(C *n);
 void tServerTh(T *n);
+void offServerTh(Node* n);

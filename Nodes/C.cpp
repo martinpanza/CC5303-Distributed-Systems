@@ -46,6 +46,7 @@ int C::run() {
     std::string message_ = "message";
     std::string startServer_ = "start_server";
     std::string stopServer_ = "stop_server";
+    std::string backToNormal_ = "back_to_normal";
     std::vector<std::string> words;
     int client_sd = -1;
     while(std::getline(std::cin, s)) {
@@ -88,6 +89,8 @@ int C::run() {
             printf("Message sent\n");
 
             this->sentMessage = m;
+            this->ipSent = words[1];
+            this->portSent = words[2];
             this->waitingForSack = 1;
             this->waitingForAck = 1;
 
@@ -97,6 +100,7 @@ int C::run() {
         } else if (words[0] == startServer_) {
 
             this->iAmAServer = 1;
+            this->off = 0;
 
             std::unique_lock<std::mutex> lk(this->serverMutex);
             this->serverCond.wait(lk);
@@ -107,6 +111,17 @@ int C::run() {
 
         } else if (words[0] == stopServer_) {
             this->iAmAServer = 0;
+            this->off = 1;
+
+            std::unique_lock<std::mutex> lk(this->serverMutex);
+            this->serverCond.wait(lk);
+            lk.unlock();
+
+            std::thread offServer (offServerTh, this);
+            offServer.detach();
+        } else if (words[0] == backToNormal_) {
+            this->iAmAServer = 0;
+            this->off = 0;
 
             std::unique_lock<std::mutex> lk(this->serverMutex);
             this->serverCond.wait(lk);
@@ -119,7 +134,7 @@ int C::run() {
 }
 
 void C::increaseSequenceNumber() {
-    this->currentSequenceNumber = (this->currentSequenceNumber + 1) % 128;
+    this->currentSequenceNumber = (this->currentSequenceNumber + 1) % MAX_SEQ_NUMBER;
 }
 
 int C::sendPacket(unsigned char *packet) {

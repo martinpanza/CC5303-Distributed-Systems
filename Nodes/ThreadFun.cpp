@@ -14,6 +14,7 @@
 #include "../utils.h"
 #include <thread>
 #include "ThreadUtils.h"
+#include "Node.h"
 
 void acceptTh(Node *n, int sd) {
     while(1){
@@ -125,12 +126,19 @@ void cProcessTh(C *c) {
             }
 
         }
-        sleep(5);
+        sleep(1);
     }
 }
 
 void cServerTh(C *c){
     std::cout << "I am a Server" << std::endl;
+
+    (c->mtx).lock();
+    c->message_queue.clear();
+    (c->mtx).unlock();
+    cSendResendMessages(getResendList(c), c);
+    increaseExpectedSeqNumber(c);
+
     unsigned char* packet;
     std::string ipSrc;
     std::string portSrc;
@@ -184,6 +192,13 @@ void cServerTh(C *c){
 
 void tServerTh(T* n){
     std::cout << "Yes! I'm a server at least!" << std::endl;
+
+    (n->mtx).lock();
+    n->message_queue.clear();
+    (n->mtx).unlock();
+    tSendResendMessages(getResendList(n), n);
+    increaseExpectedSeqNumber(n);
+
     unsigned char* packet;
     int sd;
     std::string usefulRouter;
@@ -222,7 +237,7 @@ void tServerTh(T* n){
                     n->processTablePacket(packet);
                 } else if (n->getType(packet) == CHAT_MESSAGE) {
                     if (std::find(n->serverWaitingForAcks.begin(), n->serverWaitingForAcks.end(), std::pair<std::string,
-                            std::string> {nameSrc, nameDest}) != n->serverWaitingForAcks.end()){
+                            std::string>{nameSrc, nameDest}) != n->serverWaitingForAcks.end()) {
                         sendFragmentedMessages(n, nameDest, packet);
                     } else {
 
@@ -302,6 +317,14 @@ void tServerTh(T* n){
                         }
                     }
 
+                } else if (n->getType(packet) == SACK_MESSAGE
+                        || n->getType(packet) == RESEND_MESSAGE) {
+                    usefulRouter = n->searchConnectedRouter(nameDest);
+                    sd = n->getSocketDescriptor(usefulRouter);
+
+                    sleep(n->getDelay(usefulRouter));
+                    send(sd, packet, (size_t) n->getTotalLength(packet), 0);
+
                 } else {
                     int found = 0;
                     for (int i = 0; i < n->serverWaitingForAcks.size(); i++) {
@@ -316,7 +339,7 @@ void tServerTh(T* n){
                             //send ack
                             sleep(n->getDelay(usefulRouter));
                             n->sendMessage(n->ip, std::to_string(n->port), ipSrc, portSrc, SACK_MESSAGE,
-                                           std::string(""), sd, n->getSeqNum(packet));
+                                           nameDest, sd, n->getSeqNum(packet));
 
                             std::cout << "Envie SACK a " << portSrc << std::endl;
 
@@ -349,6 +372,18 @@ void tServerTh(T* n){
             }
         }
         sleep(1);
+    }
+}
+
+void offServerTh(Node* n) {
+    std::cout << "Off" << std::endl;
+    while (1) {
+        if (!n->off) {
+            n->serverCond.notify_one();
+            std::cout << "Not doing anything has a bright side" << std::endl;
+            return;
+        }
+        sleep(3);
     }
 }
 

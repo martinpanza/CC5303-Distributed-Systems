@@ -47,6 +47,7 @@ int C::run() {
     std::string startServer_ = "start_server";
     std::string stopServer_ = "stop_server";
     std::string backToNormal_ = "back_to_normal";
+    std::string migrate_ = "migrate";
     std::vector<std::string> words;
     int client_sd = -1;
     while(std::getline(std::cin, s)) {
@@ -126,6 +127,28 @@ int C::run() {
             std::unique_lock<std::mutex> lk(this->serverMutex);
             this->serverCond.wait(lk);
             lk.unlock();
+
+            std::thread cProcessor (cProcessTh, this);
+            cProcessor.detach();
+        } else if (words[0] == migrate_){
+            this->iAmAServer = 0;
+            this->off = 0;
+            this->migrating = 1;
+
+            if (words[1] == "localhost"){
+                words[1] = "127.0.0.1";
+            }
+
+            std::unique_lock<std::mutex> lk(this->serverMutex);
+            this->serverCond.wait(lk);
+            lk.unlock();
+
+            std::thread migrateServer (cMigrateServerTh, this, words[1], words[2]);
+            migrateServer.detach();
+
+            std::unique_lock<std::mutex> lck(this->serverMutex);
+            this->serverCond.wait(lck);
+            lck.unlock();
 
             std::thread cProcessor (cProcessTh, this);
             cProcessor.detach();

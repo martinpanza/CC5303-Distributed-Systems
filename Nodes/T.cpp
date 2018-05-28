@@ -114,6 +114,7 @@ int T::run() {
             lck.unlock();
 
             std::thread sender (sendTh, this);
+            sender.detach();
         }
     }
 }

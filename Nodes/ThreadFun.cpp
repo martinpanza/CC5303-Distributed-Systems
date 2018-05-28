@@ -496,6 +496,56 @@ void tMigrateServerTh(T *n, std::string sIP, std::string sPort) {
     }
 }
 
+void cMigrateServerTh(C *n, std::string sIP, std::string sPort) {
+    std::cout << "Migrating..." << std::endl;
+    std::string m = "";
+    std::cout << "first for" << std::endl;
+    for (auto element: n->serverFragmentedPackets){
+        m += element.first.first + "," + element.first.second + ',';
+        m += std::to_string(element.second.first) + ";";
+    }
+    m += "$";
+    std::cout << "second for" << std::endl;
+    for (auto element: n->serverWaitingForAcks){
+        m += element.first + "," + element.second + ';';
+    }
+    std::cout << "make Packet" << std::endl;
+    unsigned char * packet = n->makePacket(n->ip, std::to_string(n->port), sIP, sPort, MIGRATE_MESSAGE, m, 0);
+
+    std::cout << "sending messages..." << std::endl;
+    n->sendPacket(packet);
+    std::cout << "sent messages..." << std::endl;
+
+
+    n->serverFragmentedPackets.clear();
+    n->serverWaitingForAcks.clear();
+
+
+    while (1) {
+        if (!n->migrating) {
+            n->serverCond.notify_one();
+            std::cout << "Not doing anything has a bright side" << std::endl;
+            return;
+        }
+        (n->mtx).lock();
+        if (!n->message_queue.empty()) {
+            packet = (n->message_queue).front();
+            (n->message_queue).pop_front();
+            (n->mtx).unlock();
+            std::cout << "checking..." << std::endl;
+
+            if (n->getType(packet) == MACK_MESSAGE){
+                n->migrating = 0;
+            } else {
+                // don't care
+            }
+        } else {
+            (n->mtx).unlock();
+        }
+        sleep(1);
+    }
+}
+
 
 
 

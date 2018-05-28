@@ -246,8 +246,11 @@ void tServerTh(T* n){
                             for (int i = 0; i < n->serverFragmentedPackets.size(); i++) {
                                 if (nameSrc == n->serverFragmentedPackets[i].first.first &&
                                     nameDest == n->serverFragmentedPackets[i].first.second) {
+                                    std::cout << "Frag: " << n->getMessage(packet) << std::endl;
+                                    std::cout << "Expecting " << n->serverFragmentedPackets[i].second.first << std::endl;
 
                                     if (n->getSeqNum(packet) == n->serverFragmentedPackets[i].second.first) {
+                                        std::cout << "Good seqNUm " << n->getSeqNum(packet) << std::endl;
 
                                         n->serverFragmentedPackets[i].second.second.push_back(packet);
 
@@ -282,6 +285,8 @@ void tServerTh(T* n){
                                             n->serverWaitingForAcks.push_back({nameSrc, nameDest});
                                         }
 
+                                    } else {
+                                        std::cout << "Wrong seqNUm " << n->getSeqNum(packet) << std::endl;
                                     }
 
                                     found = 1;

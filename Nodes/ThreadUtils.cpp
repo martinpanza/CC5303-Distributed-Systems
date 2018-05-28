@@ -283,8 +283,12 @@ void cSendResendMessages(std::vector<std::string> resend, C* c){
 }
 
 void increaseExpectedSeqNumber(Node *n) {
-    for (auto element: n->serverFragmentedPackets){
-        element.second.first = (element.second.first + 1) %  MAX_SEQ_NUMBER;
-        element.second.second.clear();
+    for (int i = 0; i < n->serverFragmentedPackets.size(); i++){
+        std::cout << "Before expecting seqNUm " << n->serverFragmentedPackets[i].second.first << std::endl;
+        n->serverFragmentedPackets[i].second.first = (n->serverFragmentedPackets[i].second.first + 1) %  MAX_SEQ_NUMBER;
+        std::cout << "Now expecting seqNUm " << n->serverFragmentedPackets[i].second.first << std::endl;
+        n->serverFragmentedPackets[i].second.second.clear();
+        std::cout << "Size: " << n->serverFragmentedPackets[i].second.second.size() << std::endl;
+
     }
 }

@@ -51,7 +51,7 @@ void cServer(C* c, unsigned char* packet, std::string nameSrc, std::string nameD
                            c->serverFragmentedPackets[i].second.second.push_back(packet);
 
                            std::pair<int, std::string> result = c->checkFragmentArrival(
-                                   c->fragmentedPackets[i].second);
+                                   c->serverFragmentedPackets[i].second.second);
 
                            if (result.first) {
                                std::cout << "Paso el mensaje de " << nameSrc << " para " << nameDest << std::endl;

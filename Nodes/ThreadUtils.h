@@ -20,3 +20,4 @@ void tSendResendMessages(std::vector<std::string> resend, T* t);
 void cSendResendMessages(std::vector<std::string> resend, C* t);
 std::vector<std::string> getResendList(Node* n);
 void increaseExpectedSeqNumber(Node* n);
+void processMigrateMessage(Node* n, std::string m);

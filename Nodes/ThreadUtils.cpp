@@ -207,6 +207,49 @@ void cClient(C* c, unsigned char* packet, std::string nameSrc, std::string ipSrc
                            c->getSocketDescriptor(c->getTable()->direct_routers.front()), c->sentAcks[i].second);
         }
 
+    } else if (c->getType(packet) == MIGRATE_MESSAGE) {
+        if (c->getFragmentBit(packet)) {
+            int found = 0;
+            for (int i = 0; i < c->fragmentedPackets.size(); i++) {
+                if (nameSrc == c->fragmentedPackets[i].first) {
+                    c->fragmentedPackets[i].second.push_back(packet);
+
+                    std::pair<int, std::string> result = c->checkFragmentArrival(
+                            c->fragmentedPackets[i].second);
+                    if (result.first) {
+                        std::cout << "Llego mensaje de migracion: " << result.second << std::endl;
+                        std::string m = result.second;
+                        processMigrateMessage(c, m);
+
+                        sleep(c->connections.front().second.first);
+                        c->sendMessage(c->ip, std::to_string(c->port), ipSrc, portSrc, MACK_MESSAGE, std::string(""),
+                                       c->getSocketDescriptor(c->getTable()->direct_routers.front()), 0);
+
+                        std::cout << "ACK de migracion enviado para " << portSrc << std::endl;
+
+                        c->fragmentedPackets.erase(c->fragmentedPackets.begin() + i);
+                    }
+
+                    found = 1;
+                    break;
+                }
+            }
+            if (found == 0) {
+                std::vector<unsigned char *> v;
+                v.push_back(packet);
+                std::pair<std::string, std::vector<unsigned char *>> newFragmentedPacket = {nameSrc, v};
+                c->fragmentedPackets.push_back(newFragmentedPacket);
+            }
+        } else {
+            std::cout << "Llego mensaje de migracion: " << c->getMessage(packet) << std::endl;
+            processMigrateMessage(c, c->getMessage(packet));
+
+            /*sleep(c->connections.front().second.first);
+            c->sendMessage(c->ip, std::to_string(c->port), ipSrc, portSrc, MACK_MESSAGE, std::string(""),
+                           c->getSocketDescriptor(c->getTable()->direct_routers.front()), 0);*/
+
+            std::cout << "ACK de migracion enviado para " << portSrc << std::endl;
+        }
     } else {
         if (c->getSeqNum(packet) == c->currentSequenceNumber){
             c->waitingForSack = 0;
@@ -290,5 +333,40 @@ void increaseExpectedSeqNumber(Node *n) {
         n->serverFragmentedPackets[i].second.second.clear();
         std::cout << "Size: " << n->serverFragmentedPackets[i].second.second.size() << std::endl;
 
+    }
+}
+
+void processMigrateMessage(Node *n, std::string m) {
+    std::vector<std::string> server_vectors;
+    std::vector<std::string> serverFragmentedPackets;
+    std::vector<std::string> serverWaitingForACKS;
+    if (m == "$"){
+        return;
+    }
+    splitString(m, server_vectors, '$');
+    std::cout << "first split" << std::endl;
+    splitString(server_vectors[0], serverFragmentedPackets, ';');
+    std::cout << "first for " << server_vectors[0] << std::endl;
+    for (auto fragmented: serverFragmentedPackets){
+        if (fragmented == ""){
+            continue;
+        }
+        std::vector<std::string> row;
+        std::vector<unsigned char*> v;
+        splitString(fragmented, row, ',');
+        std::cout << row[0] << " " << row[1] << " " << row[2] << std::endl;
+        n->serverFragmentedPackets.push_back({{row[0], row[1]}, {stoi(row[2]), v}});
+    }
+    std::cout << "second split" << std::endl;
+    splitString(server_vectors[1], serverWaitingForACKS, ';');
+    std::cout << "second for" << std::endl;
+    for (auto acks: serverWaitingForACKS){
+        if (acks == ""){
+            continue;
+        }
+        std::vector<std::string> row;
+        splitString(acks, row, ',');
+        std::cout << row[0] << " " << row[1] << std::endl;
+        n->serverWaitingForAcks.push_back({row[0], row[1]});
     }
 }

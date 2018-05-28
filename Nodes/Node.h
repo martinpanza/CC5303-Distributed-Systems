@@ -22,6 +22,8 @@
 #define SACK_MESSAGE 4
 #define NEW_SRV_MESSAGE 5
 #define RESEND_MESSAGE 6
+#define MIGRATE_MESSAGE 7
+#define MACK_MESSAGE 7
 
 #define HEADER_SIZE 21
 
@@ -48,6 +50,7 @@ public:
 
     int iAmAServer = 0;
     int off = 0;
+    int migrating = 0;
 
     Table table;
     std::string ip;

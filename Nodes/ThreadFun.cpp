@@ -110,58 +110,78 @@ void sendTh(T *n) {
                 } else if (n->getType(packet) == NEW_SRV_MESSAGE) {
                     std::cout << "NEW SERVER MESSAGE" << std::endl;
                     n->processServerMessage(packet);
-                } else if (n->getType(packet) == MIGRATE_MESSAGE
-                           && nameDest == n->ip + ":" + std::to_string(n->port)) {
-                    if (n->getFragmentBit(packet)) {
-                        int found = 0;
-                        for (int i = 0; i < n->fragmentedPackets.size(); i++) {
-                            if (nameSrc == n->fragmentedPackets[i].first) {
-                                n->fragmentedPackets[i].second.push_back(packet);
-
-                                std::pair<int, std::string> result = n->checkFragmentArrival(
-                                        n->fragmentedPackets[i].second);
-                                if (result.first) {
-                                    std::cout << "Llego mensaje de migracion: " << result.second << std::endl;
-                                    std::string m = result.second;
-                                    processMigrateMessage(n, m);
-
-                                    std::string usefulRouter = n->searchConnectedRouter(nameSrc);
-                                    int sd = n->getSocketDescriptor(usefulRouter);
-
-                                    //send mack
-                                    sleep(n->getDelay(usefulRouter));
-                                    n->sendMessage(n->ip, std::to_string(n->port), ip_src, port_src, MACK_MESSAGE,
-                                                   std::string(""), sd, 0);
-
-                                    std::cout << "ACK de migracion enviado para " << nameDest << std::endl;
-
-
-                                    n->fragmentedPackets.erase(n->fragmentedPackets.begin() + i);
-                                }
-
-                                found = 1;
-                                break;
+                } else if (n->getType(packet) == MIGRATE_MESSAGE) {
+                    if (nameDest != n->ip + ":" + std::to_string(n->port)){
+                        unsigned char * packet = n->makePacket(ip_src, port_src, ip_dest, port_dest, MIGRATE_MESSAGE, "", 0);
+                        for (auto element: n->getTable()->direct_routers){
+                            if (element == nameSrc){
+                                continue;
                             }
-                        }
-                        if (found == 0) {
-                            std::vector<unsigned char *> v;
-                            v.push_back(packet);
-                            std::pair<std::string, std::vector<unsigned char *>> newFragmentedPacket = {nameSrc, v};
-                            n->fragmentedPackets.push_back(newFragmentedPacket);
+                            int sd = n->getSocketDescriptor(element);
+                            send(sd, packet, (size_t) n->getTotalLength(packet), 0);
                         }
                     } else {
-                        std::cout << "Llego mensaje de migracion: " << n->getMessage(packet) << std::endl;
-                        processMigrateMessage(n, n->getMessage(packet));
+                        if (n->getMessage(packet) == ""){
+                            n->announceServer(n->ip + ":" + std::to_string(n->port), "");
+                        } else {
+                            if (n->getFragmentBit(packet)) {
+                                int found = 0;
+                                for (int i = 0; i < n->fragmentedPackets.size(); i++) {
+                                    if (nameSrc == n->fragmentedPackets[i].first) {
+                                        n->fragmentedPackets[i].second.push_back(packet);
 
-                        std::string usefulRouter = n->searchConnectedRouter(nameSrc);
-                        int sd = n->getSocketDescriptor(usefulRouter);
+                                        std::pair<int, std::string> result = n->checkFragmentArrival(
+                                                n->fragmentedPackets[i].second);
+                                        if (result.first) {
+                                            std::cout << "Llego mensaje de migracion: " << result.second << std::endl;
+                                            std::string m = result.second;
+                                            processMigrateMessage(n, m);
 
-                        //send mack
-                        sleep(n->getDelay(usefulRouter));
-                        n->sendMessage(n->ip, std::to_string(n->port), ip_src, port_src, MACK_MESSAGE,
-                                       std::string(""), sd, 0);
+                                            std::string usefulRouter = n->searchConnectedRouter(nameSrc);
+                                            int sd = n->getSocketDescriptor(usefulRouter);
 
-                        std::cout << "ACK de migracion enviado para " << nameDest << std::endl;
+                                            //send mack
+                                            sleep(n->getDelay(usefulRouter));
+                                            n->sendMessage(n->ip, std::to_string(n->port), ip_src, port_src,
+                                                           MACK_MESSAGE,
+                                                           std::string(""), sd, 0);
+
+                                            std::cout << "ACK de migracion enviado para " << nameDest << std::endl;
+
+
+                                            n->fragmentedPackets.erase(n->fragmentedPackets.begin() + i);
+                                        }
+
+                                        found = 1;
+                                        break;
+                                    }
+                                }
+                                if (found == 0) {
+                                    std::vector<unsigned char *> v;
+                                    v.push_back(packet);
+                                    std::pair<std::string, std::vector<unsigned char *>> newFragmentedPacket = {nameSrc,
+                                                                                                                v};
+                                    n->fragmentedPackets.push_back(newFragmentedPacket);
+                                }
+                            } else {
+                                std::cout << "Llego mensaje de migracion: " << n->getMessage(packet) << std::endl;
+                                processMigrateMessage(n, n->getMessage(packet));
+
+                                //TODO:enviar MACK al sevidor
+
+                                /*
+                                std::string usefulRouter = n->searchConnectedRouter(nameSrc);
+                                int sd = n->getSocketDescriptor(usefulRouter);
+
+                                //send mack
+                                sleep(n->getDelay(usefulRouter));
+                                n->sendMessage(n->ip, std::to_string(n->port), ip_src, port_src, MACK_MESSAGE,
+                                               std::string(""), sd, 0);
+
+                                std::cout << "ACK de migracion enviado para " << nameDest << std::endl;
+                                 */
+                            }
+                        }
                     }
                 } else {
                     sendOneFragmentedMessage(n, packet, nameDest);
@@ -483,7 +503,11 @@ void offServerTh(Node* n) {
     }
 }
 
-void tMigrateServerTh(T *n, std::string sIP, std::string sPort) {
+void tMigrateServerTh(T *n, std::string sIP, std::string sPort, std::string type) {
+    int t = (type == "T" || type == "t");
+    unsigned char * packet;
+    int receivedSrv = 0;
+    int receivedMACK = 0;
     std::cout << "Migrating..." << std::endl;
     std::string m = "";
     std::cout << "first for" << std::endl;
@@ -497,15 +521,24 @@ void tMigrateServerTh(T *n, std::string sIP, std::string sPort) {
         m += element.first + "," + element.second + ';';
     }
     std::cout << "make Packet" << std::endl;
-    unsigned char * packet = n->makePacket(n->ip, std::to_string(n->port), sIP, sPort, MIGRATE_MESSAGE, m, 0);
 
-    std::cout << "sending messages..." << std::endl;
-    sendFragmentedMessages(n, sIP + ":" + sPort, packet);
-    std::cout << "sent messages..." << std::endl;
+    if (t) {
+        packet = n->makePacket(n->ip, std::to_string(n->port), sIP, sPort, MIGRATE_MESSAGE, "", 0);
+        for (auto element: n->getTable()->direct_routers){
+            int sd = n->getSocketDescriptor(element);
+            send(sd, packet, (size_t) n->getTotalLength(packet), 0);
+        }
+    } else {
+        packet = n->makePacket(n->ip, std::to_string(n->port), sIP, sPort, MIGRATE_MESSAGE, m, 0);
+
+        std::cout << "sending messages..." << std::endl;
+        sendFragmentedMessages(n, sIP + ":" + sPort, packet);
+        std::cout << "sent messages..." << std::endl;
 
 
-    n->serverFragmentedPackets.clear();
-    n->serverWaitingForAcks.clear();
+        n->serverFragmentedPackets.clear();
+        n->serverWaitingForAcks.clear();
+    }
 
 
     while (1) {
@@ -521,8 +554,31 @@ void tMigrateServerTh(T *n, std::string sIP, std::string sPort) {
             (n->mtx).unlock();
             std::cout << "checking..." << std::endl;
 
-            if (n->getType(packet) == MACK_MESSAGE){
-                n->migrating = 0;
+            if (n->getType(packet) == MACK_MESSAGE) {
+                receivedMACK = 1;
+                if (receivedMACK && receivedSrv){
+                    n->migrating = 0;
+                }
+            } else if (n->getType(packet) == NEW_SRV_MESSAGE) {
+                std::cout << "NEW SERVER MESSAGE" << std::endl;
+                n->processServerMessage(packet);
+                receivedSrv = 1;
+
+                //TODO: send to server
+                if (t) {
+                    packet = n->makePacket(n->ip, std::to_string(n->port), sIP, sPort, MIGRATE_MESSAGE, m, 0);
+
+                    std::cout << "sending messages..." << std::endl;
+                    sendFragmentedMessages(n, sIP + ":" + sPort, packet);
+                    std::cout << "sent messages..." << std::endl;
+
+
+                    n->serverFragmentedPackets.clear();
+                    n->serverWaitingForAcks.clear();
+                }
+                if (receivedMACK && receivedSrv){
+                    n->migrating = 0;
+                }
             } else {
                 // don't care
             }
@@ -533,7 +589,11 @@ void tMigrateServerTh(T *n, std::string sIP, std::string sPort) {
     }
 }
 
-void cMigrateServerTh(C *n, std::string sIP, std::string sPort) {
+void cMigrateServerTh(C *n, std::string sIP, std::string sPort, std::string type) {
+    int t = (type == "T" || type == "t");
+    unsigned char * packet;
+    int receivedSrv = 0;
+    int receivedMACK = 0;
     std::cout << "Migrating..." << std::endl;
     std::string m = "";
     std::cout << "first for" << std::endl;
@@ -547,7 +607,23 @@ void cMigrateServerTh(C *n, std::string sIP, std::string sPort) {
         m += element.first + "," + element.second + ';';
     }
     std::cout << "make Packet" << std::endl;
-    unsigned char * packet = n->makePacket(n->ip, std::to_string(n->port), sIP, sPort, MIGRATE_MESSAGE, m, 0);
+
+    if (t) {
+        packet = n->makePacket(n->ip, std::to_string(n->port), sIP, sPort, MIGRATE_MESSAGE, "", 0);
+        n->sendPacket(packet);
+    } else {
+        packet = n->makePacket(n->ip, std::to_string(n->port), sIP, sPort, MIGRATE_MESSAGE, m, 0);
+
+        std::cout << "sending messages..." << std::endl;
+        n->sendPacket(packet);
+        std::cout << "sent messages..." << std::endl;
+
+
+        n->serverFragmentedPackets.clear();
+        n->serverWaitingForAcks.clear();
+    }
+
+    packet = n->makePacket(n->ip, std::to_string(n->port), sIP, sPort, MIGRATE_MESSAGE, m, 0);
 
     std::cout << "sending messages..." << std::endl;
     n->sendPacket(packet);
@@ -571,8 +647,31 @@ void cMigrateServerTh(C *n, std::string sIP, std::string sPort) {
             (n->mtx).unlock();
             std::cout << "checking..." << std::endl;
 
-            if (n->getType(packet) == MACK_MESSAGE){
-                n->migrating = 0;
+            if (n->getType(packet) == MACK_MESSAGE) {
+                receivedMACK = 1;
+                if (receivedMACK && receivedSrv){
+                    n->migrating = 0;
+                }
+            } else if (n->getType(packet) == NEW_SRV_MESSAGE) {
+                std::cout << "NEW SERVER MESSAGE" << std::endl;
+                n->processServerMessage(packet);
+                receivedSrv = 1;
+
+                //TODO: send to server
+                if (t) {
+                    packet = n->makePacket(n->ip, std::to_string(n->port), sIP, sPort, MIGRATE_MESSAGE, m, 0);
+
+                    std::cout << "sending messages..." << std::endl;
+                    n->sendPacket(packet);
+                    std::cout << "sent messages..." << std::endl;
+
+
+                    n->serverFragmentedPackets.clear();
+                    n->serverWaitingForAcks.clear();
+                }
+                if (receivedMACK && receivedSrv){
+                    n->migrating = 0;
+                }
             } else {
                 // don't care
             }

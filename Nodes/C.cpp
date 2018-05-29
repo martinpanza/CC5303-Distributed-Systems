@@ -106,6 +106,8 @@ int C::run() {
             std::unique_lock<std::mutex> lk(this->serverMutex);
             this->serverCond.wait(lk);
             lk.unlock();
+            std::cout << "announcing server" << std::endl;
+            this->announceServer(this->ip + ":" + std::to_string(this->port), "");
 
             std::thread server (cServerTh, this);
             server.detach();

@@ -71,6 +71,8 @@ int T::run() {
             this->serverCond.wait(lk);
             lk.unlock();
 
+            this->announceServer(this->ip + ":" + std::to_string(this->port), "");
+
             std::thread server (tServerTh, this);
             server.detach();
 
@@ -116,6 +118,14 @@ int T::run() {
 
             std::thread sender (sendTh, this);
             sender.detach();
+        } else if (words[0] == "show_server") {
+            std::cout << this->serverName << std::endl;
+            for (std::string router : this->getTable()->pathToServer) {
+                std::cout << router << " -- ";
+            }
+            std::cout << std::endl;
+        } else if (words[0] == "show_table") {
+            this->getTable()->printTable();
         }
     }
 }

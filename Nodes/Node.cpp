@@ -15,6 +15,7 @@ Node::Node(std::string ip, uint16_t port, std::string name) {
     if (ip == "localhost") {
         ip = "127.0.0.1";
     }
+    this->serverName = "";
     this->ip = std::move(ip);
     this->port = port;
     this->name = std::move(name);
@@ -380,3 +381,145 @@ std::pair<int, std::string> Node::checkFragmentArrival(std::vector<unsigned char
     }
     return result;
 };
+// message is the serverName
+// format of message will be serverName-router_1;router_2;...;router_n-client_1;client_2
+void Node::announceServer(std::string message, std::string initialSender) {
+    std::vector<std::string>* directRouters =(this->getTable())->getDirectRouters();
+    std::vector<std::string>* directClients =(this->getTable())->getDirectClients();
+    std::vector<std::string> ipport;
+    std::set<std::string> routerSet, diff;
+    message += "-";
+    //message += ";";
+    std::cout << "getting routers" << std::endl;
+    if (directRouters->size() > 0) {
+        for (int i = 0; i < directRouters->size() - 1; i++) {
+            message += (*directRouters)[i];
+            message += ";";
+            routerSet.insert((*directRouters)[i]);
+        }
+        message += (*directRouters)[directRouters->size() - 1];
+        routerSet.insert((*directRouters)[directRouters->size() - 1]);
+    }
+
+    message += "-";
+
+    std::cout << "getting clients" << std::endl;
+    if (directClients->size() > 0) {
+        for (int i = 0; i < directClients->size() - 1; i++) {
+            message += (*directClients)[i];
+            message += ";";
+        }
+        message += (*directClients)[directClients->size() - 1];
+    }
+    // dont want to send the message twice to a node
+    std::set_difference(routerSet.begin(), routerSet.end(), this->getTable()->noticedNodes.begin(), this->getTable()->noticedNodes.end(), std::inserter(diff, diff.end()));
+    std::cout << "senting to unnoticed ones" << std::endl;
+    for (std::string router : diff) {
+        if (router != initialSender) {
+            splitString(router, ipport, ':');
+            this->sendMessage(this->ip, std::to_string(this->port), ipport[0], ipport[1], NEW_SRV_MESSAGE, message,
+                              this->getSocketDescriptor(router), 0);
+            this->getTable()->addNoticedNodes(router);
+        }
+    }
+}
+
+int Node::isDirectConnection(std::string name) {
+    int directConn = 0;
+    std::vector<std::string>* directRouters =(this->getTable())->getDirectRouters();
+    std::vector<std::string>* directClients =(this->getTable())->getDirectClients();
+    for (std::string d : (*directClients)) {
+        if (d == name) {
+            directConn = 1;
+            break;
+        }
+    }
+    if (!directConn) {
+        for (std::string d : (*directRouters)) {
+            if (d == name) {
+                directConn = 1;
+                break;
+            }
+        }
+    }
+    return directConn;
+}
+
+
+void Node::processServerMessage(const unsigned char* packet) {
+    std::vector<std::string> routersVec, clientsVec, serverRoutersClients;
+    // routers from packet and my routers
+    std::set<std::string> routers, myRouters, diff;
+    std::string packetServer, srcName, myName, packetMessage;
+    std::vector<std::string>* myDirectRouters =(this->getTable())->getDirectRouters();
+    int directToServer = 0;
+    packetMessage = this->getMessage(packet);
+    std::cout << "separating all" << std::endl;
+    splitString(packetMessage, serverRoutersClients, '-');
+    std::cout << "separating routers" << std::endl;
+    splitString(serverRoutersClients[1], routersVec, ';');
+    std::cout << "separating clients" << std::endl;
+    splitString(serverRoutersClients[2], clientsVec, ';');
+    std::cout << "getting server" << std::endl;
+    packetServer = serverRoutersClients[0];
+
+    srcName = this->getSrcIp(packet) + ":" + std::to_string(this->getSrcPort(packet));
+    myName = this->ip + ":" + std::to_string((this->port));
+    std::cout << "process server message from: " << srcName << std::endl;
+    std::cout << "server: " << packetServer << std::endl;
+
+    // current serverName is different than the broadcasted one
+    if (this->serverName != packetServer) {
+        this->serverName = packetServer;
+        this->getTable()->prepareNewServer();
+    }
+    // if the sender is the server itself
+    if (srcName == packetServer) {
+        this->getTable()->pathToServer.insert(packetServer);
+    } else {
+        // check if i should add to the path to the server by checking the difference in direct routers
+        // if it has at least 1 direct router
+        if (!this->isDirectConnection(packetServer)) {
+            // the sender router and its direct routers
+            routers.insert(srcName);
+            for (int i = 0; i < routersVec.size(); i++) {
+                    routers.insert(routersVec[i]);
+            }
+
+            // me and my direct routers
+            myRouters.insert(myName);
+            for (std::string router : (*myDirectRouters)) {
+                myRouters.insert(router);
+            }
+
+            // if mine contains all of the other then there is a loop so i dont need to add it to my pathToServer
+            std::set_difference(routers.begin(), routers.end(), myRouters.begin(),
+                                myRouters.end(), std::inserter(diff, diff.end()));
+
+            for (int i = 0; i < routersVec.size(); i++) {
+                if (routersVec[i] == packetServer) {
+                    directToServer = 1;
+                    break;
+                }
+            }
+
+            if (directToServer != 1) {
+                for (int i = 0; i < clientsVec.size(); i++) {
+                    if (clientsVec[i] == packetServer) {
+                        directToServer = 1;
+                        break;
+                    }
+                }
+            }
+
+            // if there is at least one that the other has that i dont
+            if (!diff.empty() || directToServer == 1) {
+                this->getTable()->pathToServer.insert(srcName);
+            }
+        }
+    }
+    this->announceServer(packetServer, srcName);
+}
+
+
+

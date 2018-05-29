@@ -107,6 +107,9 @@ void sendTh(T *n) {
 
                 if (n->getType(packet) == TABLE_MESSAGE) {
                     n->processTablePacket(packet);
+                } else if (n->getType(packet) == NEW_SRV_MESSAGE) {
+                    std::cout << "NEW SERVER MESSAGE" << std::endl;
+                    n->processServerMessage(packet);
                 } else if (n->getType(packet) == MIGRATE_MESSAGE
                            && nameDest == n->ip + ":" + std::to_string(n->port)) {
                     if (n->getFragmentBit(packet)) {
@@ -201,7 +204,7 @@ void cProcessTh(C *c) {
             }
 
         }
-        sleep(1);
+        sleep(5);
     }
 }
 
@@ -221,6 +224,7 @@ void cServerTh(C *c){
     std::string ipDest;
     std::string portDest;
     std::string nameDest;
+
     while (1){
         if (!c->iAmAServer){
             c->serverCond.notify_one();

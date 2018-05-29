@@ -106,6 +106,10 @@ public:
 
     int allMessageArrived(std::vector<unsigned char *> fragments);
 
+    void announceServer(std::string message, std::string initialSender);
+    void processServerMessage(const unsigned char* packet);
+    int isDirectConnection(std::string name);
+
     int partition (std::vector<unsigned char*>* fragments, int low, int high);
     void quickSort(std::vector<unsigned char*>* fragments, int low, int high);
 };

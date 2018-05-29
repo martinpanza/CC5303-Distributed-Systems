@@ -101,7 +101,7 @@ void sendTh(T *n) {
                     //send nack
                     sleep(n->getDelay(usefulRouter));
                     n->sendMessage(n->ip, std::to_string(n->port), ip_src, port_src, NACK_MESSAGE,
-                                   std::string(""), sd, 0);
+                                   std::string(""), sd, 0, 1);
                     continue;
                 }
 
@@ -112,7 +112,7 @@ void sendTh(T *n) {
                     n->processServerMessage(packet);
                 } else if (n->getType(packet) == MIGRATE_MESSAGE) {
                     if (nameDest != n->ip + ":" + std::to_string(n->port)){
-                        unsigned char * packet = n->makePacket(ip_src, port_src, ip_dest, port_dest, MIGRATE_MESSAGE, "", 0);
+                        unsigned char * packet = n->makePacket(ip_src, port_src, ip_dest, port_dest, MIGRATE_MESSAGE, "", 0, 0);
                         for (auto element: n->getTable()->direct_routers){
                             if (element == nameSrc){
                                 continue;
@@ -341,7 +341,7 @@ void tServerTh(T* n){
                     //send nack
                     sleep(n->getDelay(usefulRouter));
                     n->sendMessage(n->ip, std::to_string(n->port), ipSrc, portSrc, NACK_MESSAGE,
-                                   std::string(""), sd, 0);
+                                   std::string(""), sd, 0, 1);
                     continue;
                 }
 
@@ -522,16 +522,15 @@ void tMigrateServerTh(T *n, std::string sIP, std::string sPort, std::string type
         m += element.first + "," + element.second + ';';
     }
     std::cout << "make Packet" << std::endl;
-    unsigned char * packet = n->makePacket(n->ip, std::to_string(n->port), sIP, sPort, MIGRATE_MESSAGE, m, 0, 1);
 
     if (t) {
-        packet = n->makePacket(n->ip, std::to_string(n->port), sIP, sPort, MIGRATE_MESSAGE, "", 0);
+        packet = n->makePacket(n->ip, std::to_string(n->port), sIP, sPort, MIGRATE_MESSAGE, "", 0, 0);
         for (auto element: n->getTable()->direct_routers){
             int sd = n->getSocketDescriptor(element);
             send(sd, packet, (size_t) n->getTotalLength(packet), 0);
         }
     } else {
-        packet = n->makePacket(n->ip, std::to_string(n->port), sIP, sPort, MIGRATE_MESSAGE, m, 0);
+        packet = n->makePacket(n->ip, std::to_string(n->port), sIP, sPort, MIGRATE_MESSAGE, m, 0, 0);
 
         std::cout << "sending messages..." << std::endl;
         sendFragmentedMessages(n, sIP + ":" + sPort, packet);
@@ -558,7 +557,7 @@ void tMigrateServerTh(T *n, std::string sIP, std::string sPort, std::string type
 
             if (n->getType(packet) == MACK_MESSAGE) {
                 receivedMACK = 1;
-                if (receivedMACK && receivedSrv){
+                if (receivedMACK && receivedSrv) {
                     n->migrating = 0;
                 }
             } else if (n->getType(packet) == NEW_SRV_MESSAGE) {
@@ -568,19 +567,21 @@ void tMigrateServerTh(T *n, std::string sIP, std::string sPort, std::string type
 
                 //TODO: send to server
                 if (t) {
-                    packet = n->makePacket(n->ip, std::to_string(n->port), sIP, sPort, MIGRATE_MESSAGE, m, 0);
+                    packet = n->makePacket(n->ip, std::to_string(n->port), sIP, sPort, MIGRATE_MESSAGE, m, 0, 1);
 
                     std::cout << "sending messages..." << std::endl;
-                    sendFragmentedMessages(n, sIP + ":" + sPort, packet);
+                    sendThorughRouter(n, n->getTable()->getDirectRouters()->front(), packet);
                     std::cout << "sent messages..." << std::endl;
 
 
                     n->serverFragmentedPackets.clear();
                     n->serverWaitingForAcks.clear();
                 }
-                if (receivedMACK && receivedSrv){
+                if (receivedMACK && receivedSrv) {
                     n->migrating = 0;
                 }
+            } else if (n->getType(packet) == MIGRATE_MESSAGE) {
+                sendFragmentedMessages(n, n->getTable()->getDirectRouters()->front(), packet);
             } else {
                 // don't care
             }
@@ -609,13 +610,12 @@ void cMigrateServerTh(C *n, std::string sIP, std::string sPort, std::string type
         m += element.first + "," + element.second + ';';
     }
     std::cout << "make Packet" << std::endl;
-    unsigned char * packet = n->makePacket(n->ip, std::to_string(n->port), sIP, sPort, MIGRATE_MESSAGE, m, 0, 1);
 
     if (t) {
-        packet = n->makePacket(n->ip, std::to_string(n->port), sIP, sPort, MIGRATE_MESSAGE, "", 0);
+        packet = n->makePacket(n->ip, std::to_string(n->port), sIP, sPort, MIGRATE_MESSAGE, "", 0, 0);
         n->sendPacket(packet);
     } else {
-        packet = n->makePacket(n->ip, std::to_string(n->port), sIP, sPort, MIGRATE_MESSAGE, m, 0);
+        packet = n->makePacket(n->ip, std::to_string(n->port), sIP, sPort, MIGRATE_MESSAGE, m, 0, 0);
 
         std::cout << "sending messages..." << std::endl;
         n->sendPacket(packet);
@@ -625,8 +625,6 @@ void cMigrateServerTh(C *n, std::string sIP, std::string sPort, std::string type
         n->serverFragmentedPackets.clear();
         n->serverWaitingForAcks.clear();
     }
-
-    packet = n->makePacket(n->ip, std::to_string(n->port), sIP, sPort, MIGRATE_MESSAGE, m, 0);
 
     std::cout << "sending messages..." << std::endl;
     n->sendPacket(packet);
@@ -662,7 +660,7 @@ void cMigrateServerTh(C *n, std::string sIP, std::string sPort, std::string type
 
                 //TODO: send to server
                 if (t) {
-                    packet = n->makePacket(n->ip, std::to_string(n->port), sIP, sPort, MIGRATE_MESSAGE, m, 0);
+                    packet = n->makePacket(n->ip, std::to_string(n->port), sIP, sPort, MIGRATE_MESSAGE, m, 0, 1);
 
                     std::cout << "sending messages..." << std::endl;
                     n->sendPacket(packet);

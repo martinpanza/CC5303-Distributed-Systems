@@ -313,6 +313,19 @@ void sendFragmentedMessages(T* n, std::string nameDest, unsigned char* packet){
     send(sd, packet, (size_t) n->getTotalLength(packet), 0);
 }
 
+void sendThorughRouter(T* n, std::string name, unsigned char* packet){
+    int sd = n->getSocketDescriptor(name);
+
+    while(n->getTotalLength(packet) > n->getMTU(name)){
+        std::pair<unsigned char*, unsigned char*> f_packets = n->fragment(packet, n->getMTU(name));
+        sleep(n->getDelay(name));
+        send(sd, f_packets.first, (size_t) n->getTotalLength(f_packets.first), 0);
+        packet = f_packets.second;
+    }
+    sleep(n->getDelay(name));
+    send(sd, packet, (size_t) n->getTotalLength(packet), 0);
+}
+
 std::vector<std::string> getResendList(Node* n){
     std::string nameSrc;
     std::vector<std::string> resend;

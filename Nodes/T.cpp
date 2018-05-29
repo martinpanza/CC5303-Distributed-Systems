@@ -37,6 +37,8 @@ int T::run() {
     std::string connect_ = "connect";
     std::string startServer_ = "start_server";
     std::string stopServer_ = "stop_server";
+    std::string backToNormal_ = "back_to_normal";
+    std::string migrate_ = "migrate";
     std::vector<std::string> words;
     while(std::getline(std::cin, s)) {
         splitString(s, words, ' ');
@@ -62,6 +64,7 @@ int T::run() {
         } else if (words[0] == startServer_) {
 
             this->iAmAServer = 1;
+            this->off = 0;
 
             std::unique_lock<std::mutex> lk(this->serverMutex);
             this->serverCond.wait(lk);
@@ -74,10 +77,43 @@ int T::run() {
 
         } else if (words[0] == stopServer_) {
             this->iAmAServer = 0;
+            this->off = 1;
 
             std::unique_lock<std::mutex> lk(this->serverMutex);
             this->serverCond.wait(lk);
             lk.unlock();
+
+            std::thread offServer (offServerTh, this);
+            offServer.detach();
+        } else if (words[0] == backToNormal_) {
+            this->iAmAServer = 0;
+            this->off = 0;
+
+            std::unique_lock<std::mutex> lk(this->serverMutex);
+            this->serverCond.wait(lk);
+            lk.unlock();
+
+            std::thread sender (sendTh, this);
+            sender.detach();
+        } else if (words[0] == migrate_){
+            this->iAmAServer = 0;
+            this->off = 0;
+            this->migrating = 1;
+
+            if (words[1] == "localhost"){
+                words[1] = "127.0.0.1";
+            }
+
+            std::unique_lock<std::mutex> lk(this->serverMutex);
+            this->serverCond.wait(lk);
+            lk.unlock();
+
+            std::thread migrateServer (tMigrateServerTh, this, words[1], words[2]);
+            migrateServer.detach();
+
+            std::unique_lock<std::mutex> lck(this->serverMutex);
+            this->serverCond.wait(lck);
+            lck.unlock();
 
             std::thread sender (sendTh, this);
             sender.detach();

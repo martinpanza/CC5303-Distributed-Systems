@@ -16,3 +16,8 @@ void cServer(C* c, unsigned char* packet, std::string nameSrc, std::string nameD
              std::string portSrc, std::string ipDest, std::string portDest);
 void cClient(C* c, unsigned char* packet, std::string nameSrc, std::string ipSrc, std::string portSrc);
 void sendFragmentedMessages(T* n, std::string nameDest, unsigned char* packet);
+void tSendResendMessages(std::vector<std::string> resend, T* t);
+void cSendResendMessages(std::vector<std::string> resend, C* t);
+std::vector<std::string> getResendList(Node* n);
+void increaseExpectedSeqNumber(Node* n);
+void processMigrateMessage(Node* n, std::string m);

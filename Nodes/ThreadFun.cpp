@@ -74,6 +74,9 @@ void sendTh(T *n) {
                 if (n->getType(packet) == TABLE_MESSAGE) {
                     n->processTablePacket(packet);
                     (n->mtx).unlock();
+                } else if (n->getType(packet) == NEW_SRV_MESSAGE) {
+                    std::cout << "NEW SERVER MESSAGE" << std::endl;
+                    n->processServerMessage(packet);
                 } else {
                     ip_src = n->getSrcIp(packet);
                     port_src = std::to_string(n->getSrcPort(packet));

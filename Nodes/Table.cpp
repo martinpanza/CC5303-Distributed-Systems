@@ -31,6 +31,18 @@ void Table::addReachableClient(std::string name, std::vector<std::string> ways) 
     this->reachable_clients.push_back(p);
 }
 
+void Table::addNoticedNodes(std::string name) {
+    this->noticedNodes.insert(name);
+}
+
+void Table::addPathToServer(std::string name) {
+    this->pathToServer.insert(name);
+}
+void Table::prepareNewServer() {
+    this->pathToServer.clear();
+    this->noticedNodes.clear();
+}
+
 void Table::printTable() {
     std::cout << "Direct Clients: " << std::endl;
     for (std::string client : direct_clients) {

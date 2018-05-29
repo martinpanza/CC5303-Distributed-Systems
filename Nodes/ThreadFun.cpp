@@ -110,7 +110,7 @@ void sendTh(T *n) {
                                     //send mack
                                     sleep(n->getDelay(usefulRouter));
                                     n->sendMessage(n->ip, std::to_string(n->port), ip_src, port_src, MACK_MESSAGE,
-                                                   std::string(""), sd, 0);
+                                                   std::string(""), sd, 0, n->getServerBit(packet));
 
                                     std::cout << "ACK de migracion enviado para " << nameDest << std::endl;
 
@@ -138,7 +138,7 @@ void sendTh(T *n) {
                         //send mack
                         sleep(n->getDelay(usefulRouter));
                         n->sendMessage(n->ip, std::to_string(n->port), ip_src, port_src, MACK_MESSAGE,
-                                       std::string(""), sd, 0);
+                                       std::string(""), sd, 0, n->getServerBit(packet));
 
                         std::cout << "ACK de migracion enviado para " << nameDest << std::endl;
                     }
@@ -290,6 +290,9 @@ void tServerTh(T* n){
                 nameDest += ":";
                 nameDest += portDest;
 
+                // should work
+                n->setServerBit(packet, 1);
+
                 //std::cout << "got message of type: " << n->getType(packet) << std::endl;
                 if (n->getType(packet) == TABLE_MESSAGE) {
                     n->processTablePacket(packet);
@@ -298,7 +301,6 @@ void tServerTh(T* n){
                             std::string>{nameSrc, nameDest}) != n->serverWaitingForAcks.end()) {
                         sendFragmentedMessages(n, nameDest, packet);
                     } else {
-
                         if (n->getFragmentBit(packet)) {
                             int found = 0;
                             for (int i = 0; i < n->serverFragmentedPackets.size(); i++) {
@@ -325,14 +327,14 @@ void tServerTh(T* n){
                                             //send ack
                                             sleep(n->getDelay(usefulRouter));
                                             n->sendMessage(n->ip, std::to_string(n->port), ipSrc, portSrc, SACK_MESSAGE,
-                                                           std::string(""), sd, n->getSeqNum(packet));
+                                                           std::string(""), sd, n->getSeqNum(packet), n->getServerBit(packet));
 
                                             std::cout << "Envie SACK a " << nameSrc << std::endl;
 
                                             packet = n->makePacket(std::move(ipSrc), std::move(portSrc),
                                                                    std::move(ipDest),
                                                                    std::move(portDest), CHAT_MESSAGE, result.second,
-                                                                   n->getSeqNum(packet));
+                                                                   n->getSeqNum(packet), n->getServerBit(packet));
 
                                             sendFragmentedMessages(n, nameDest, packet);
 
@@ -368,7 +370,7 @@ void tServerTh(T* n){
                             //send ack
                             sleep(n->getDelay(usefulRouter));
                             n->sendMessage(n->ip, std::to_string(n->port), ipSrc, portSrc, SACK_MESSAGE,
-                                           std::string(""), sd, n->getSeqNum(packet));
+                                           std::string(""), sd, n->getSeqNum(packet), n->getServerBit(packet));
 
                             std::cout << "Envie SACK a " << nameSrc << std::endl;
 
@@ -402,7 +404,7 @@ void tServerTh(T* n){
                             //send ack
                             sleep(n->getDelay(usefulRouter));
                             n->sendMessage(n->ip, std::to_string(n->port), ipSrc, portSrc, SACK_MESSAGE,
-                                           nameDest, sd, n->getSeqNum(packet));
+                                           nameDest, sd, n->getSeqNum(packet), n->getServerBit(packet));
 
                             std::cout << "Envie SACK a " << portSrc << std::endl;
 
@@ -464,7 +466,7 @@ void tMigrateServerTh(T *n, std::string sIP, std::string sPort) {
         m += element.first + "," + element.second + ';';
     }
     std::cout << "make Packet" << std::endl;
-    unsigned char * packet = n->makePacket(n->ip, std::to_string(n->port), sIP, sPort, MIGRATE_MESSAGE, m, 0);
+    unsigned char * packet = n->makePacket(n->ip, std::to_string(n->port), sIP, sPort, MIGRATE_MESSAGE, m, 0, 1);
 
     std::cout << "sending messages..." << std::endl;
     sendFragmentedMessages(n, sIP + ":" + sPort, packet);
@@ -514,7 +516,7 @@ void cMigrateServerTh(C *n, std::string sIP, std::string sPort) {
         m += element.first + "," + element.second + ';';
     }
     std::cout << "make Packet" << std::endl;
-    unsigned char * packet = n->makePacket(n->ip, std::to_string(n->port), sIP, sPort, MIGRATE_MESSAGE, m, 0);
+    unsigned char * packet = n->makePacket(n->ip, std::to_string(n->port), sIP, sPort, MIGRATE_MESSAGE, m, 0, 1);
 
     std::cout << "sending messages..." << std::endl;
     n->sendPacket(packet);

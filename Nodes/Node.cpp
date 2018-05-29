@@ -28,7 +28,7 @@ int Node::run() {
 
 int Node::sendMessage(const std::string ip_src, const std::string port_src,
                       const std::string ip_dest, const std::string port_dest,
-                      const int type, const std::string message, const int sd, int sequenceNumber) {
+                      const int type, const std::string message, const int sd, int sequenceNumber, int serverBit) {
     std::cout << ip_src << ":" << port_src << std::endl;
     std::cout << ip_dest << ":" << port_dest << " " << type << " " << message;
     return 0;
@@ -200,9 +200,9 @@ std::pair<unsigned char *, unsigned char*> Node::fragment(unsigned char* packet,
 
 
     unsigned char* top_packet = this->makePacket(ip_src, port_src, ip_dest, port_dest,
-                                                 type, top_message, this->getSeqNum(packet));
+                                                 type, top_message, this->getSeqNum(packet), this->getServerBit(packet));
     unsigned char* bot_packet = this->makePacket(ip_src, port_src, ip_dest, port_dest,
-                                                 type, bot_message, this->getSeqNum(packet));
+                                                 type, bot_message, this->getSeqNum(packet), this->getServerBit(packet));
 
     if (!this->getFragmentBit(packet)){
         this->setLastBit(bot_packet, 1);
@@ -226,7 +226,7 @@ std::pair<unsigned char *, unsigned char*> Node::fragment(unsigned char* packet,
 
 
 unsigned char* Node::makePacket(std::string ip_src, std::string port_src, std::string ip_dest,
-                                std::string port_dest, int type, std::string message, int sequenceNumber) {
+                                std::string port_dest, int type, std::string message, int sequenceNumber, int serverBit) {
     auto packet = (unsigned char*) malloc((HEADER_SIZE + message.length()) * sizeof(unsigned char));
 
     std::vector<std::string> ip, ip_d;
@@ -275,7 +275,7 @@ unsigned char* Node::makePacket(std::string ip_src, std::string port_src, std::s
     packet[18] = (unsigned char) 0;
 
     // Server bit
-    packet[19] = (unsigned char) 0;
+    packet[19] = (unsigned char) serverBit;
 
     // Sequence number
     packet[20] = (unsigned char) sequenceNumber;
@@ -285,6 +285,16 @@ unsigned char* Node::makePacket(std::string ip_src, std::string port_src, std::s
         packet[i + 21] = (unsigned char) message[i];
     }
     return packet;
+}
+
+std::string Node::searchPathToServer() {
+    std::string usefulRouter;
+    std::set<std::string>* pathToServer = this->getTable()->getPathToServer();
+    auto pathIterator = pathToServer->begin();
+    usefulRouter = *pathIterator;
+    pathToServer->erase(pathIterator);
+    pathToServer->insert(*pathIterator);
+    return usefulRouter;
 }
 
 std::string Node::searchConnectedRouter(std::string name) {
@@ -409,7 +419,7 @@ void Node::announceServer(std::string message, std::string initialSender) {
         if (router != initialSender) {
             splitString(router, ipport, ':');
             this->sendMessage(this->ip, std::to_string(this->port), ipport[0], ipport[1], NEW_SRV_MESSAGE, message,
-                              this->getSocketDescriptor(router), 0);
+                              this->getSocketDescriptor(router), 0, 1);
             this->getTable()->addNoticedNodes(router);
         }
     }

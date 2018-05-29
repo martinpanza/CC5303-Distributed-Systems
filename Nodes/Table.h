@@ -30,6 +30,7 @@ public:
     std::vector<std::pair<std::string, std::vector<std::string>>>* getReachableClients();
     std::vector<std::string>* getDirectClients();
     std::vector<std::string>* getDirectRouters();
+    std::set<std::string>* getPathToServer();
 };
 
 

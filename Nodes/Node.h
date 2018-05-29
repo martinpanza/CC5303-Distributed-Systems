@@ -23,7 +23,7 @@
 #define NEW_SRV_MESSAGE 5
 #define RESEND_MESSAGE 6
 #define MIGRATE_MESSAGE 7
-#define MACK_MESSAGE 7
+#define MACK_MESSAGE 8
 
 #define HEADER_SIZE 21
 
@@ -62,6 +62,7 @@ public:
     std::vector<std::pair<int, std::string>> socketDescriptors;
 
     std::string searchConnectedRouter(std::string name);
+    std::string searchPathToServer();
     explicit Node(std::string ip, uint16_t port, std::string name);
     virtual int run();
     Table* getTable();
@@ -87,9 +88,9 @@ public:
 
     void printPacket(const unsigned char* packet);
     unsigned char* makePacket(std::string ip_src, std::string port_src, std::string ip_dest,
-                              std::string port_dest, int type, std::string message, int sequenceNumber);
+                              std::string port_dest, int type, std::string message, int sequenceNumber, int serverBit);
     virtual int sendMessage(std::string ip_src, std::string port_src, std::string ip_dest, std::string port_dest,
-                            int type, std::string message, int sd, int sequenceNumber);
+                            int type, std::string message, int sd, int sequenceNumber, int serverBit);
     int getSocketDescriptor(std::string basic_string);
     int getDelay(std::string basic_string);
 

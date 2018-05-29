@@ -16,10 +16,10 @@ void C::addConnection(std::string ip, std::string port) {
 }
 
 int C::sendMessage(std::string ip_src, std::string port_src, std::string ip_dest, std::string port_dest, int type,
-                   std::string message, int sd, int sequenceNumber) {
+                   std::string message, int sd, int sequenceNumber, int serverBit) {
     //std::cout << "sending message..." << std::endl;
     unsigned char* packet = this->makePacket(std::move(ip_src), std::move(port_src), std::move(ip_dest),
-                                             std::move(port_dest), type, message, sequenceNumber);
+                                             std::move(port_dest), type, message, sequenceNumber, serverBit);
     //std::cout << this->getMessage(packet) << std::endl;
     while(this->getTotalLength(packet) > this->connections.front().second.second){
         std::pair<unsigned char*, unsigned char*> f_packets = this->fragment(packet, this->connections.front().second.second);
@@ -86,7 +86,7 @@ int C::run() {
             m += words[words.size() - 1];
 
             this->sendMessage(this->ip, std::to_string(this->port), words[1], words[2],
-                              CHAT_MESSAGE, m, client_sd, this->currentSequenceNumber);
+                              CHAT_MESSAGE, m, client_sd, this->currentSequenceNumber, 0);
             printf("Message sent\n");
 
             this->sentMessage = m;

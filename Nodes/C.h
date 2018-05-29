@@ -20,7 +20,7 @@ public:
     std::vector<std::pair<std::string, int>> sentAcks;
     int run() override;
     int sendMessage(std::string ip_src, std::string port_src, std::string ip_dest, std::string port_dest, int type,
-                    std::string message, int sd, int sequenceNumber) override;
+                    std::string message, int sd, int sequenceNumber, int serverBit) override;
     int sendPacket(unsigned char* packet);
     void addConnection(std::string ip, std::string port);
     void increaseSequenceNumber();

@@ -18,6 +18,10 @@ std::vector<std::string>* Table::getDirectRouters() {
     return &(this->direct_routers);
 }
 
+std::set<std::string>* Table::getPathToServer() {
+    return &(this->pathToServer);
+}
+
 void Table::addDirectClient(std::string name) {
     this->direct_clients.push_back(name);
 }

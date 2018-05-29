@@ -147,7 +147,35 @@ void sendTh(T *n) {
                             }
                         } else {
                             // its for me!
-                            processMigrateMessage(n, n->getMessage(packet));
+                            if (n->getFragmentBit(packet)) {
+                                int found = 0;
+                                for (int i = 0; i < n->fragmentedPackets.size(); i++) {
+                                    if (nameSrc == n->fragmentedPackets[i].first) {
+                                        n->fragmentedPackets[i].second.push_back(packet);
+                                        std::pair<int, std::string> result = n->checkFragmentArrival(
+                                                n->fragmentedPackets[i].second);
+                                        if (result.first) {
+                                            n->fragmentedPackets.erase(n->fragmentedPackets.begin() + i);
+                                        }
+
+                                        found = 1;
+                                        break;
+                                    }
+                                }
+                                if (found == 0) {
+                                    std::vector<unsigned char *> v;
+                                    v.push_back(packet);
+                                    std::pair<std::string, std::vector<unsigned char *>> newFragmentedPacket = {nameSrc, v};
+                                    n->fragmentedPackets.push_back(newFragmentedPacket);
+                                }
+                            } else {
+                                processMigrateMessage(n, n->getMessage(packet));
+
+                                n->announceServer(n->ip + ":" + std::to_string(n->port), "");
+                                n->iAmAServer = 1;
+                                std::thread server(tServerTh, n);
+                                server.detach();
+                            }
                         }
                         /*
                         // ESTO ESTABA ANTES

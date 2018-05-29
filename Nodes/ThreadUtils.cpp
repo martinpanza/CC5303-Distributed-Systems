@@ -261,6 +261,7 @@ void cClient(C* c, unsigned char* packet, std::string nameSrc, std::string ipSrc
 
                         c->fragmentedPackets.erase(c->fragmentedPackets.begin() + i);
 
+                        c->announceServer(c->ip + ":" + std::to_string(c->port), "");
                         c->iAmAServer = 1;
                         std::thread server (cServerTh, c);
                         server.detach();

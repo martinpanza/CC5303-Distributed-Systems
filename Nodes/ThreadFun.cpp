@@ -155,6 +155,9 @@ void sendTh(T *n) {
                                         std::pair<int, std::string> result = n->checkFragmentArrival(
                                                 n->fragmentedPackets[i].second);
                                         if (result.first) {
+                                            n->iAmAServer = 1;
+                                            std::thread server(tServerTh, n);
+                                            server.detach();
                                             n->fragmentedPackets.erase(n->fragmentedPackets.begin() + i);
                                         }
 

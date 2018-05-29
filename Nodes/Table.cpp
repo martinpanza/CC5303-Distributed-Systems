@@ -39,6 +39,10 @@ void Table::addNoticedNodes(std::string name) {
     this->noticedNodes.insert(name);
 }
 
+void Table::addNoticedClients(std::string name) {
+    this->noticedClients.insert(name);
+}
+
 void Table::addPathToServer(std::string name) {
     this->pathToServer.insert(name);
 }

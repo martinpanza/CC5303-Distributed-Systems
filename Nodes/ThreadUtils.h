@@ -21,4 +21,4 @@ void cSendResendMessages(std::vector<std::string> resend, C* t);
 std::vector<std::string> getResendList(Node* n);
 void increaseExpectedSeqNumber(Node* n);
 void processMigrateMessage(Node* n, std::string m);
-void sendThorughRouter(T* n, std::string name, unsigned char* packet);
+void sendThroughRouter(T* n, std::string name, unsigned char* packet);

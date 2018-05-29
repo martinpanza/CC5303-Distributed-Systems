@@ -12,6 +12,7 @@ class Table {
 public:
 
     std::set<std::string> noticedNodes;
+    std::set<std::string> noticedClients;
     std::set<std::string> pathToServer;
 
     std::vector<std::string> direct_clients;
@@ -23,6 +24,7 @@ public:
     void addDirectRouter(std::string name);
     void addReachableClient(std::string name, std::vector<std::string> ways);
     void addNoticedNodes(std::string name);
+    void addNoticedClients(std::string name);
     void addPathToServer(std::string name);
     void prepareNewServer();
     void printTable();

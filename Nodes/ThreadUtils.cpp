@@ -313,7 +313,7 @@ void sendFragmentedMessages(T* n, std::string nameDest, unsigned char* packet){
     send(sd, packet, (size_t) n->getTotalLength(packet), 0);
 }
 
-void sendThorughRouter(T* n, std::string name, unsigned char* packet){
+void sendThroughRouter(T* n, std::string name, unsigned char* packet){
     int sd = n->getSocketDescriptor(name);
 
     while(n->getTotalLength(packet) > n->getMTU(name)){

@@ -397,10 +397,10 @@ void Node::announceServer(std::string message, std::string initialSender) {
     std::vector<std::string>* directRouters =(this->getTable())->getDirectRouters();
     std::vector<std::string>* directClients =(this->getTable())->getDirectClients();
     std::vector<std::string> ipport;
-    std::set<std::string> routerSet, diff;
+    std::set<std::string> routerSet, clientSet, clientDiff, diff;
     message += "-";
     //message += ";";
-    std::cout << "getting routers" << std::endl;
+    //std::cout << "getting routers" << std::endl;
     if (directRouters->size() > 0) {
         for (int i = 0; i < directRouters->size() - 1; i++) {
             message += (*directRouters)[i];
@@ -413,17 +413,19 @@ void Node::announceServer(std::string message, std::string initialSender) {
 
     message += "-";
 
-    std::cout << "getting clients" << std::endl;
+    //std::cout << "getting clients" << std::endl;
     if (directClients->size() > 0) {
         for (int i = 0; i < directClients->size() - 1; i++) {
             message += (*directClients)[i];
             message += ";";
+            clientSet.insert((*directClients)[i]);
         }
         message += (*directClients)[directClients->size() - 1];
+        clientSet.insert((*directClients)[directClients->size() - 1]);
     }
     // dont want to send the message twice to a node
     std::set_difference(routerSet.begin(), routerSet.end(), this->getTable()->noticedNodes.begin(), this->getTable()->noticedNodes.end(), std::inserter(diff, diff.end()));
-    std::cout << "senting to unnoticed ones" << std::endl;
+    //std::cout << "senting to unnoticed ones" << std::endl;
     for (std::string router : diff) {
         if (router != initialSender) {
             splitString(router, ipport, ':');
@@ -432,6 +434,15 @@ void Node::announceServer(std::string message, std::string initialSender) {
             this->getTable()->addNoticedNodes(router);
         }
     }
+
+    std::set_difference(clientSet.begin(), clientSet.end(), this->getTable()->noticedClients.begin(), this->getTable()->noticedClients.end(), std::inserter(clientDiff, clientDiff.end()));
+
+    for (std::string client : clientDiff) {
+        splitString(client, ipport, ':');
+        this->sendMessage(this->ip, std::to_string(this->port), ipport[0], ipport[2], NEW_SRV_MESSAGE, message, this->getSocketDescriptor(client), 0, 1);
+        this->getTable()->addNoticedClients(client);
+    }
+
 }
 
 int Node::isDirectConnection(std::string name) {
@@ -464,19 +475,19 @@ void Node::processServerMessage(const unsigned char* packet) {
     std::vector<std::string>* myDirectRouters =(this->getTable())->getDirectRouters();
     int directToServer = 0;
     packetMessage = this->getMessage(packet);
-    std::cout << "separating all" << std::endl;
+    //std::cout << "separating all" << std::endl;
     splitString(packetMessage, serverRoutersClients, '-');
-    std::cout << "separating routers" << std::endl;
+    //std::cout << "separating routers" << std::endl;
     splitString(serverRoutersClients[1], routersVec, ';');
-    std::cout << "separating clients" << std::endl;
+    //std::cout << "separating clients" << std::endl;
     splitString(serverRoutersClients[2], clientsVec, ';');
-    std::cout << "getting server" << std::endl;
+    //std::cout << "getting server" << std::endl;
     packetServer = serverRoutersClients[0];
 
     srcName = this->getSrcIp(packet) + ":" + std::to_string(this->getSrcPort(packet));
     myName = this->ip + ":" + std::to_string((this->port));
-    std::cout << "process server message from: " << srcName << std::endl;
-    std::cout << "server: " << packetServer << std::endl;
+    //std::cout << "process server message from: " << srcName << std::endl;
+    //std::cout << "server: " << packetServer << std::endl;
 
     // current serverName is different than the broadcasted one
     if (this->serverName != packetServer) {

@@ -156,6 +156,7 @@ void sendTh(T *n) {
                                                 n->fragmentedPackets[i].second);
                                         if (result.first) {
                                             n->iAmAServer = 1;
+                                            n->announceServer(n->ip + ":" + std::to_string(n->port), "");
                                             std::thread server(tServerTh, n);
                                             server.detach();
                                             n->fragmentedPackets.erase(n->fragmentedPackets.begin() + i);

@@ -7,6 +7,7 @@
 #include "socket.h"
 #include "ThreadFun.h"
 #include <thread>
+#include <vector>
 
 int random_int(int min, int max) {
     std::random_device rd;
@@ -119,7 +120,7 @@ int T::run() {
             this->serverCond.wait(lk);
             lk.unlock();
 
-            std::thread migrateServer (tMigrateServerTh, this, words[1], words[2]);
+            std::thread migrateServer (tMigrateServerTh, this, words[1], words[2], words[3]);
             migrateServer.detach();
 
             std::unique_lock<std::mutex> lck(this->serverMutex);
@@ -271,5 +272,12 @@ void T::addConnection(std::string ip, std::string port, std::string type) {
     this->connections.push_back(P);
 }
 
+
+bool T::checkC(std::string name) {
+    auto it = std::find(this->downC.begin(),
+                        this->downC.end(), name);
+
+    return it != this->downC.end();
+}
 
 

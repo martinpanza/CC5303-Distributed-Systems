@@ -145,7 +145,7 @@ int C::run() {
             this->serverCond.wait(lk);
             lk.unlock();
 
-            std::thread migrateServer (cMigrateServerTh, this, words[1], words[2]);
+            std::thread migrateServer (cMigrateServerTh, this, words[1], words[2], words[3]);
             migrateServer.detach();
 
             std::unique_lock<std::mutex> lck(this->serverMutex);

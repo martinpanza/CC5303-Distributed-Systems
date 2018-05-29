@@ -71,21 +71,6 @@ void sendTh(T *n) {
             if (!n->message_queue.empty()) {
                 packet = (n->message_queue).front();
                 (n->message_queue).pop_front();
-
-                if (n->getType(packet) == TABLE_MESSAGE) {
-                    n->processTablePacket(packet);
-                    (n->mtx).unlock();
-                } else if (n->getType(packet) == NEW_SRV_MESSAGE) {
-                    std::cout << "NEW SERVER MESSAGE" << std::endl;
-                    n->processServerMessage(packet);
-                } else {
-                    ip_src = n->getSrcIp(packet);
-                    port_src = std::to_string(n->getSrcPort(packet));
-                    ip_dest = n->getDestIp(packet);
-                    port_dest = std::to_string(n->getDestPort(packet));
-                    name = ip_dest;
-                    name += ":";
-                    name += port_dest;
                 (n->mtx).unlock();
 
                 ip_src = n->getSrcIp(packet);
@@ -101,6 +86,9 @@ void sendTh(T *n) {
 
                 if (n->getType(packet) == TABLE_MESSAGE) {
                     n->processTablePacket(packet);
+                } else if (n->getType(packet) == NEW_SRV_MESSAGE) {
+                    std::cout << "NEW SERVER MESSAGE" << std::endl;
+                    n->processServerMessage(packet);
                 } else if (n->getType(packet) == MIGRATE_MESSAGE
                            && nameDest == n->ip + ":" + std::to_string(n->port)) {
                     if (n->getFragmentBit(packet)) {

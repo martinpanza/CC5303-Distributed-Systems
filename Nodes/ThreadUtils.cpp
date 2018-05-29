@@ -21,7 +21,7 @@ void sendOneFragmentedMessage(T *n, unsigned char *packet, std::string name) {
     int sd;
     int type = n->getType(packet);
     std::string usefulRouter;
-    if ((type == ACK_MESSAGE || type == CHAT_MESSAGE) && !n->getServerBit(packet)) {
+    if ((type == ACK_MESSAGE || type == CHAT_MESSAGE || type == MIGRATE_MESSAGE) && !n->getServerBit(packet)) {
         usefulRouter = n->searchPathToServer();
         sd = n->getSocketDescriptor(usefulRouter);
 

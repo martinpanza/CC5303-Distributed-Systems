@@ -7,6 +7,7 @@
 #include "socket.h"
 #include "ThreadFun.h"
 #include <thread>
+#include <vector>
 
 int random_int(int min, int max) {
     std::random_device rd;
@@ -258,6 +259,13 @@ int T::sendMessage(std::string ip_src, std::string port_src, std::string ip_dest
     auto totalLength = (size_t) this->getTotalLength(packet);
     send(sd, packet, totalLength, 0);
     return 0;
+}
+
+bool T::checkC(std::string name) {
+    auto it = std::find(this->downC.begin(),
+                        this->downC.end(), name);
+
+    return it != this->downC.end();
 }
 
 

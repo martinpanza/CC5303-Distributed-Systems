@@ -20,6 +20,8 @@ public:
     void broadcastTable();
 
     void shareTable(std::string ip, std::string port, int sd);
+
+    bool checkC(std::string basic_string);
 };
 
 

@@ -49,7 +49,16 @@ void receiveTh(Node *n, int sd){
 
         auto * to = (char *)malloc(valread * sizeof(char));
         copyBuffer(buffer, &to, valread);
-        std::cout << "Received packet" << std::endl;
+        std::cout << "Received packet: " << valread << std::endl;
+
+        if (valread == 0){
+            std::string name = n->getNameBySocketDescriptor(sd);
+            n->getTable()->direct_clients.erase(std::remove(n->getTable()->direct_clients.begin(),
+                                                            n->getTable()->direct_clients.end(), name),
+                                                n->getTable()->direct_clients.end());
+            n->downC.push_back(name);
+            return;
+        }
 
         (n->mtx).lock();
         (n->message_queue).push_back((unsigned  char*)to);
@@ -83,6 +92,18 @@ void sendTh(T *n) {
                 nameDest = ip_dest;
                 nameDest += ":";
                 nameDest += port_dest;
+
+                if (n->checkC(nameDest)){
+                    std::cout << "C is down" << std::endl;
+                    std::string usefulRouter = n->searchConnectedRouter(nameSrc);
+                    int sd = n->getSocketDescriptor(usefulRouter);
+
+                    //send nack
+                    sleep(n->getDelay(usefulRouter));
+                    n->sendMessage(n->ip, std::to_string(n->port), ip_src, port_src, NACK_MESSAGE,
+                                   std::string(""), sd, 0);
+                    continue;
+                }
 
                 if (n->getType(packet) == TABLE_MESSAGE) {
                     n->processTablePacket(packet);
@@ -285,6 +306,18 @@ void tServerTh(T* n){
                 nameDest = ipDest;
                 nameDest += ":";
                 nameDest += portDest;
+
+                if (n->checkC(nameDest)){
+                    std::cout << "C is down" << std::endl;
+                    std::string usefulRouter = n->searchConnectedRouter(nameSrc);
+                    int sd = n->getSocketDescriptor(usefulRouter);
+
+                    //send nack
+                    sleep(n->getDelay(usefulRouter));
+                    n->sendMessage(n->ip, std::to_string(n->port), ipSrc, portSrc, NACK_MESSAGE,
+                                   std::string(""), sd, 0);
+                    continue;
+                }
 
                 //std::cout << "got message of type: " << n->getType(packet) << std::endl;
                 if (n->getType(packet) == TABLE_MESSAGE) {

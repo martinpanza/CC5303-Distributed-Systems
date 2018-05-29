@@ -109,7 +109,7 @@ void cServer(C* c, unsigned char* packet, std::string nameSrc, std::string nameD
            }
        }
 
-    } else {
+    } else if (c->getType(packet) == ACK_MESSAGE){
         int found = 0;
         for (int i = 0; i < c->serverWaitingForAcks.size(); i++) {
             if (nameDest == c->serverWaitingForAcks[i].first &&
@@ -138,6 +138,9 @@ void cServer(C* c, unsigned char* packet, std::string nameSrc, std::string nameD
             sleep(c->connections.front().second.first);
             send(c->getSocketDescriptor(c->getTable()->direct_routers.front()), packet, (size_t) c->getTotalLength(packet), 0);
         }
+    } else {
+        sleep(c->connections.front().second.first);
+        send(c->getSocketDescriptor(c->getTable()->direct_routers.front()), packet, (size_t) c->getTotalLength(packet), 0);
     }
 }
 
@@ -193,10 +196,10 @@ void cClient(C* c, unsigned char* packet, std::string nameSrc, std::string ipSrc
             }
         }
     } else if (c->getType(packet) == RESEND_MESSAGE) {
-        if (c->waitingForSack){
+        if (c->waitingForSack) {
             c->increaseSequenceNumber();
             c->sendMessage(c->ip, std::to_string(c->port), c->ipSent, c->portSent,
-                              CHAT_MESSAGE, c->sentMessage,
+                           CHAT_MESSAGE, c->sentMessage,
                            c->getSocketDescriptor(c->getTable()->direct_routers.front()), c->currentSequenceNumber);
         }
         for (int i = 0; i < c->sentAcks.size(); i++) {
@@ -206,6 +209,16 @@ void cClient(C* c, unsigned char* packet, std::string nameSrc, std::string ipSrc
                            ACK_MESSAGE, "",
                            c->getSocketDescriptor(c->getTable()->direct_routers.front()), c->sentAcks[i].second);
         }
+
+    } else if (c->getType(packet) == NACK_MESSAGE) {
+        c->waitingForAck = 0;
+        c->waitingForSack = 0;
+        std::cout << c->ipSent << ":" << c->portSent << " is down" << std::endl;
+        c->sentMessage = "";
+        c->ipSent = "";
+        c->portSent = "";
+        c->increaseSequenceNumber();
+        c->cond.notify_one();
 
     } else if (c->getType(packet) == MIGRATE_MESSAGE) {
         if (c->getFragmentBit(packet)) {

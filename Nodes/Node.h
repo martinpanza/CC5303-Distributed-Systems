@@ -23,7 +23,8 @@
 #define NEW_SRV_MESSAGE 5
 #define RESEND_MESSAGE 6
 #define MIGRATE_MESSAGE 7
-#define MACK_MESSAGE 7
+#define MACK_MESSAGE 8
+#define NACK_MESSAGE 9
 
 #define HEADER_SIZE 21
 
@@ -60,6 +61,7 @@ public:
     std::deque<unsigned char*> message_queue;
     int connectionIndex = 0;
     std::vector<std::pair<int, std::string>> socketDescriptors;
+    std::vector<std::string> downC;
 
     std::string searchConnectedRouter(std::string name);
     explicit Node(std::string ip, uint16_t port, std::string name);
@@ -91,6 +93,7 @@ public:
     virtual int sendMessage(std::string ip_src, std::string port_src, std::string ip_dest, std::string port_dest,
                             int type, std::string message, int sd, int sequenceNumber);
     int getSocketDescriptor(std::string basic_string);
+    std::string getNameBySocketDescriptor(int sd);
     int getDelay(std::string basic_string);
 
     int getMTU(std::string name);

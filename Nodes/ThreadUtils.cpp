@@ -104,7 +104,7 @@ void cServer(C* c, unsigned char* packet, std::string nameSrc, std::string nameD
                //send ack
                sleep(c->connections.front().second.first);
                c->sendMessage(c->ip, std::to_string(c->port), ipSrc, portSrc, SACK_MESSAGE,
-                              nameDest,
+                              std::string(""),
                               c->getSocketDescriptor(c->getTable()->direct_routers.front()), c->getSeqNum(packet), c->getServerBit(packet));
 
                //Send Packet
@@ -133,7 +133,7 @@ void cServer(C* c, unsigned char* packet, std::string nameSrc, std::string nameD
                 //send ack
                 sleep(c->connections.front().second.first);
                 c->sendMessage(c->ip, std::to_string(c->port), ipSrc, portSrc, SACK_MESSAGE,
-                               std::string(""),
+                               nameDest,
                                c->getSocketDescriptor(c->getTable()->direct_routers.front()), c->getSeqNum(packet), serverBit);
 
                 //Send packet

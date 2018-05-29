@@ -670,7 +670,7 @@ void cMigrateServerTh(C *n, std::string sIP, std::string sPort, std::string type
 
                 n->migrating = 0;
             } else if (n->getType(packet) == MIGRATE_MESSAGE) {
-                sendThroughRouter(n, n->getTable()->getDirectRouters()->back(), packet);
+                n->sendPacket(packet);
             } else {
 // don't care
             }

@@ -46,7 +46,7 @@ void cServer(C* c, unsigned char* packet, std::string nameSrc, std::string nameD
     if (c->iAmAServer) {
         serverBit = 1;
     }
-    c->setServerBit(packet, 1);
+    c->setServerBit(packet, serverBit);
 
     if (c->getType(packet) == CHAT_MESSAGE) {
        if (std::find(c->serverWaitingForAcks.begin(), c->serverWaitingForAcks.end(), std::pair<std::string,
@@ -73,7 +73,7 @@ void cServer(C* c, unsigned char* packet, std::string nameSrc, std::string nameD
                                c->sendMessage(c->ip, std::to_string(c->port), ipSrc, portSrc, SACK_MESSAGE,
                                               std::string(""),
                                               c->getSocketDescriptor(c->getTable()->direct_routers.front()),
-                                              c->getSeqNum(packet), c->getServerBit(packet));
+                                              c->getSeqNum(packet), serverBit);
                                //send message
                                sleep(c->connections.front().second.first);
                                c->sendMessage(ipSrc, portSrc, ipDest, portDest, CHAT_MESSAGE, result.second,

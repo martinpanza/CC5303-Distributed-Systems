@@ -111,6 +111,7 @@ void sendTh(T *n) {
                     std::cout << "NEW SERVER MESSAGE" << std::endl;
                     n->processServerMessage(packet);
                 } else if (n->getType(packet) == MIGRATE_MESSAGE) {
+                    std::cout << "NEW MIGRATE MESSAGE" << std::endl;
                     if (n->getMessage(packet) == "") {
                         if (nameDest != n->ip + ":" + std::to_string(n->port)){
                             unsigned char * packet = n->makePacket(ip_src, port_src, ip_dest, port_dest, MIGRATE_MESSAGE, "", 0, 0);
@@ -125,13 +126,25 @@ void sendTh(T *n) {
                             n->announceServer(n->ip + ":" + std::to_string(n->port), "");
                         }
                     } else {
+                        std::cout << "it is empty" << std::endl;
                         if (nameDest != n->ip + ":" + std::to_string(n->port)) {
+                            std::cout << "not for me" << std::endl;
                             int isAClient = 0;
                             std::vector<std::string> ipport;
-                            std::vector<std::pair<std::string, std::vector<std::string>>>* reachableClients = n->getTable()->getReachableClients();
+                            auto* reachableClients = n->getTable()->getReachableClients();
+                            auto* directClients = n->getTable()->getDirectClients();
+                            for (int i = 0; i < directClients->size(); i++) {
+                                if ((*directClients)[i] == nameDest) {
+                                    isAClient = 1;
+                                    std::cout << "it is for a direct client!" << std::endl;
+                                    splitString((*directClients)[i], ipport, ':');
+                                    break;
+                                }
+                            }
                             for (int i = 0; i < reachableClients->size(); i++) {
                                 if ((*reachableClients)[i].first == nameDest) {
                                     isAClient = 1;
+                                    std::cout << "it is for a client!" << std::endl;
                                     splitString((*reachableClients)[i].first, ipport, ':');
                                     break;
                                 }
@@ -690,44 +703,50 @@ void cMigrateServerTh(C *n, std::string sIP, std::string sPort, std::string type
     }
 
 
-    while (1) {
-        if (!n->migrating) {
-            n->serverCond.notify_one();
-            std::cout << "Not doing anything has a bright side" << std::endl;
-            return;
-        }
-        (n->mtx).lock();
-        if (!n->message_queue.empty()) {
-            packet = (n->message_queue).front();
-            (n->message_queue).pop_front();
-            (n->mtx).unlock();
-            std::cout << "checking..." << std::endl;
+    if (t) {
 
-            if (n->getType(packet) == NEW_SRV_MESSAGE) {
-                std::cout << "NEW SERVER MESSAGE" << std::endl;
-                n->processServerMessage(packet);
+        while (1) {
+            if (!n->migrating) {
+                n->serverCond.notify_one();
+                std::cout << "Not doing anything has a bright side" << std::endl;
+                return;
+            }
+            (n->mtx).lock();
+            if (!n->message_queue.empty()) {
+                packet = (n->message_queue).front();
+                (n->message_queue).pop_front();
+                (n->mtx).unlock();
+                std::cout << "checking..." << std::endl;
 
-                if (t) {
+                if (n->getType(packet) == NEW_SRV_MESSAGE) {
+                    std::cout << "NEW SERVER MESSAGE" << std::endl;
+                    n->processServerMessage(packet);
+
                     packet = n->makePacket(n->ip, std::to_string(n->port), sIP, sPort, MIGRATE_MESSAGE, m, 0, 1);
 
                     std::cout << "sending messages..." << std::endl;
                     n->sendPacket(packet);
                     std::cout << "sent messages..." << std::endl;
 
-
                     n->serverFragmentedPackets.clear();
                     n->serverWaitingForAcks.clear();
-                }
 
-                n->migrating = 0;
-            } else if (n->getType(packet) == MIGRATE_MESSAGE) {
-                n->sendPacket(packet);
+                    n->migrating = 0;
+                } else if (n->getType(packet) == MIGRATE_MESSAGE) {
+                    n->sendPacket(packet);
+                } else {
+                    // don't care
+                }
             } else {
-// don't care
+                (n->mtx).unlock();
             }
-        } else {
-            (n->mtx).unlock();
+            sleep(1);
         }
-        sleep(1);
+
+    } else {
+        n->migrating = 0;
+        n->serverCond.notify_one();
+        std::cout << "Not doing anything has a bright side" << std::endl;
+        return;
     }
 }

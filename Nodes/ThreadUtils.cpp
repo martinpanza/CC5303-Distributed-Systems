@@ -280,6 +280,7 @@ void cClient(C* c, unsigned char* packet, std::string nameSrc, std::string ipSrc
         } else {
             std::cout << "Llego mensaje de migracion: " << c->getMessage(packet) << std::endl;
             processMigrateMessage(c, c->getMessage(packet));
+            c->announceServer(c->ip + ":" + std::to_string(c->port), "");
             c->iAmAServer = 1;
             std::thread server (cServerTh, c);
             server.detach();

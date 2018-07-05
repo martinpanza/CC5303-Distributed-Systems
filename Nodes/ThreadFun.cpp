@@ -281,9 +281,12 @@ void sendTh(T *n) {
 
 void cProcessTh(C *c) {
     unsigned char* packet;
-    std::string ip;
-    std::string port;
-    std::string name;
+    std::string ipsrc;
+    std::string portsrc;
+    std::string namesrc;
+    std::string ipdest;
+    std::string portdest;
+    std::string namedest;
     while (1){
         if (c->iAmAServer){
             c->serverCond.notify_one();
@@ -296,14 +299,20 @@ void cProcessTh(C *c) {
                 packet = (c->message_queue).front();
                 (c->message_queue).pop_front();
                 (c->mtx).unlock();
-                ip = c->getSrcIp(packet);
-                port = std::to_string(c->getSrcPort(packet));
-                name = ip;
-                name += ":";
-                name += port;
+                ipsrc = c->getSrcIp(packet);
+                portsrc = std::to_string(c->getSrcPort(packet));
+                namesrc = ipsrc;
+                namesrc += ":";
+                namesrc += portsrc;
+                ipdest = c->getDestIp(packet);
+                portdest = std::to_string(c->getDestPort(packet));
+                namedest = ipdest;
+                namedest += ":";
+                namedest += portdest;
 
-                cClient(c, packet, name, ip, port);
-
+                if (namedest == c->ip + ":" + std::to_string(c->port)) {
+                    cClient(c, packet, namesrc, ipsrc, portsrc);
+                }
             } else {
                 (c->mtx).unlock();
             }

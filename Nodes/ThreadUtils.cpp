@@ -24,10 +24,12 @@ void sendOneFragmentedMessage(T *n, unsigned char *packet, std::string name) {
     int type = n->getType(packet);
     std::string usefulRouter;
     if ((type == ACK_MESSAGE || type == CHAT_MESSAGE || type == MIGRATE_MESSAGE) && !n->getServerBit(packet)) {
+        std::cout << "buscar path" << std::endl;
         usefulRouter = n->searchPathToServer();
         sd = n->getSocketDescriptor(usefulRouter);
 
     } else {
+        std::cout << "no buscar path" << std::endl;
         usefulRouter = n->searchConnectedRouter(name);
         sd = n->getSocketDescriptor(usefulRouter);
     }
@@ -244,7 +246,7 @@ void cClient(C* c, unsigned char* packet, std::string nameSrc, std::string ipSrc
         c->cond.notify_one();
 
     } else if (c->getType(packet) == NEW_SRV_MESSAGE) {
-        //ignore
+        std::cout << "NEW_SRV_MESSAGE received" << std::endl;
     } else if (c->getType(packet) == MIGRATE_MESSAGE) {
         if (c->getFragmentBit(packet)) {
             int found = 0;

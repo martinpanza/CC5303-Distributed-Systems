@@ -126,7 +126,7 @@ void sendTh(T *n) {
                             n->announceServer(n->ip + ":" + std::to_string(n->port), "");
                         }
                     } else {
-                        std::cout << "it is empty" << std::endl;
+                        std::cout << "it is not empty" << std::endl;
                         if (nameDest != n->ip + ":" + std::to_string(n->port)) {
                             std::cout << "not for me" << std::endl;
                             int isAClient = 0;
@@ -154,9 +154,10 @@ void sendTh(T *n) {
                                 n->setServerBit(packet, 1);
                                 sendOneFragmentedMessage(n, packet, ipport[0] + ":" + ipport[1]);
                             } else {
+                                std::cout << "for router" << std::endl;
                                 // Message is for a router, i have the path in my table
                                 n->setServerBit(packet, 0);
-                                sendOneFragmentedMessage(n, packet, ipport[0] + ":" + ipport[1]);
+                                sendOneFragmentedMessage(n, packet, nameDest);
                             }
                         } else {
                             // its for me!
@@ -717,7 +718,7 @@ void cMigrateServerTh(C *n, std::string sIP, std::string sPort, std::string type
         while (1) {
             if (!n->migrating) {
                 n->serverCond.notify_one();
-                std::cout << "Not doing anything has a bright side" << std::endl;
+                std::cout << "Finish migrating" << std::endl;
                 return;
             }
             (n->mtx).lock();
@@ -729,7 +730,7 @@ void cMigrateServerTh(C *n, std::string sIP, std::string sPort, std::string type
 
                 if (n->getType(packet) == NEW_SRV_MESSAGE) {
                     std::cout << "NEW SERVER MESSAGE" << std::endl;
-                    n->processServerMessage(packet);
+                    //n->processServerMessage(packet);
 
                     packet = n->makePacket(n->ip, std::to_string(n->port), sIP, sPort, MIGRATE_MESSAGE, m, 0, 1);
 

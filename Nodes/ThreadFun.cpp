@@ -113,8 +113,10 @@ void sendTh(T *n) {
                 } else if (n->getType(packet) == MIGRATE_MESSAGE) {
                     std::cout << "NEW MIGRATE MESSAGE Dest: " << nameDest << " myName: " << n->ip + ":" + std::to_string(n->port) << std::endl;
                     if (n->getMessage(packet) == "") {
+                        std::cout << "it is empty" << std::endl;
                         if (nameDest != n->ip + ":" + std::to_string(n->port)){
-                            unsigned char * packet = n->makePacket(ip_src, port_src, ip_dest, port_dest, MIGRATE_MESSAGE, "", 0, 0);
+                            std::cout << "for me" << std::endl;
+                            unsigned char * packet = n->makePacket(n->ip, std::to_string(n->port), ip_dest, port_dest, MIGRATE_MESSAGE, "", 0, 0);
                             for (auto element: n->getTable()->direct_routers){
                                 if (element == nameSrc){
                                     continue;
@@ -539,7 +541,14 @@ void tServerTh(T* n){
                     sleep(n->getDelay(usefulRouter));
                     send(sd, packet, (size_t) n->getTotalLength(packet), 0);
 
-                } else {
+                } else if (n->getType(packet) == MIGRATE_MESSAGE) {
+                    std::cout << "ignoring MIGRATE message" << std::endl;
+                } else if (n->getType(packet) == NEW_SRV_MESSAGE) {
+                    std::cout << "ignoring NEW_SRV message" << std::endl;
+                }
+
+
+                else {
                     int found = 0;
                     for (int i = 0; i < n->serverWaitingForAcks.size(); i++) {
                         if (nameDest == n->serverWaitingForAcks[i].first &&

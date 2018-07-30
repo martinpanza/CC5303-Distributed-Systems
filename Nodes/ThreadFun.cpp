@@ -111,7 +111,7 @@ void sendTh(T *n) {
                     std::cout << "NEW SERVER MESSAGE" << std::endl;
                     n->processServerMessage(packet);
                 } else if (n->getType(packet) == MIGRATE_MESSAGE) {
-                    std::cout << "NEW MIGRATE MESSAGE" << std::endl;
+                    std::cout << "NEW MIGRATE MESSAGE Dest: " << nameDest << " myName: " << n->ip + ":" + std::to_string(n->port) << std::endl;
                     if (n->getMessage(packet) == "") {
                         if (nameDest != n->ip + ":" + std::to_string(n->port)){
                             unsigned char * packet = n->makePacket(ip_src, port_src, ip_dest, port_dest, MIGRATE_MESSAGE, "", 0, 0);
@@ -123,6 +123,7 @@ void sendTh(T *n) {
                                 send(sd, packet, (size_t) n->getTotalLength(packet), 0);
                             }
                         } else {
+                            n->getTable()->prepareNewServer();
                             n->announceServer(n->ip + ":" + std::to_string(n->port), "");
                         }
                     } else {
@@ -636,7 +637,6 @@ void tMigrateServerTh(T *n, std::string sIP, std::string sPort, std::string type
         n->serverFragmentedPackets.clear();
         n->serverWaitingForAcks.clear();
     }
-
 
     while (1) {
         if (!n->migrating) {

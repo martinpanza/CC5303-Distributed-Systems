@@ -432,6 +432,7 @@ void Node::announceServer(std::string message, std::string initialSender) {
             splitString(router, ipport, ':');
             this->sendMessage(this->ip, std::to_string(this->port), ipport[0], ipport[1], NEW_SRV_MESSAGE, message,
                               this->getSocketDescriptor(router), 0, 1);
+
             this->getTable()->addNoticedNodes(router);
         }
     }

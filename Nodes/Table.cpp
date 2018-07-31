@@ -49,6 +49,7 @@ void Table::addPathToServer(std::string name) {
 void Table::prepareNewServer() {
     this->pathToServer.clear();
     this->noticedNodes.clear();
+    this->noticedClients.clear();
     // Should I clear noticed clients?
 }
 

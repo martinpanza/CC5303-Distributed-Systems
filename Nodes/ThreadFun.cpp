@@ -121,6 +121,7 @@ void sendTh(T *n) {
                                 if (element == nameSrc){
                                     continue;
                                 }
+                                sleep((unsigned int) n->getDelay(element));
                                 int sd = n->getSocketDescriptor(element);
                                 send(sd, packet, (size_t) n->getTotalLength(packet), 0);
                             }
@@ -337,9 +338,9 @@ void cServerTh(C *c){
         c->sendMessage(c->ip, std::to_string(c->port), c->ipSent, c->portSent,
                        CHAT_MESSAGE, c->sentMessage,
                        c->getSocketDescriptor(c->getTable()->direct_routers.front()), c->currentSequenceNumber,
-                       0);
+                       1);
     }
-    c->resendAcks(0);
+    c->resendAcks(1);
     cSendResendMessages(getResendList(c), c);
     increaseExpectedSeqNumber(c);
 

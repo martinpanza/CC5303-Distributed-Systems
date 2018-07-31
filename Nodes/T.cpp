@@ -130,8 +130,8 @@ int T::run() {
             std::thread sender (sendTh, this);
             sender.detach();
         } else if (words[0] == "show_server") {
-            std::cout << this->serverName << std::endl;
-            for (std::string router : this->getTable()->pathToServer) {
+            //std::cout << this->getTable()->getPathToServer()->end() << std::endl;
+            for (std::string router : this->getTable()->getPathToServer()[0]) {
                 std::cout << router << " -- ";
             }
             std::cout << std::endl;

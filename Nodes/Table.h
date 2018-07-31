@@ -13,7 +13,7 @@ public:
 
     std::set<std::string> noticedNodes;
     std::set<std::string> noticedClients;
-    std::set<std::string> pathToServer;
+    std::vector<std::set<std::string>> pathToServer;
 
     std::vector<std::string> direct_clients;
     std::vector<std::string> direct_routers;

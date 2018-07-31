@@ -47,7 +47,7 @@ public:
     std::mutex serverMutex;
     std::condition_variable serverCond;
 
-    std::string serverName;
+    std::vector<std::string> serverName;
 
     int iAmAServer = 0;
     int off = 0;

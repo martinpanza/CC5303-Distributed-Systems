@@ -19,7 +19,15 @@ std::vector<std::string>* Table::getDirectRouters() {
 }
 
 std::set<std::string>* Table::getPathToServer() {
-    return &(this->pathToServer);
+    int min = 10000;
+    std::set<std::string>* minPath;
+    for (auto element: this->pathToServer){
+        if (element.size() < min){
+            min = element.size();
+            minPath = &element;
+        }
+    }
+    return minPath;
 }
 
 void Table::addDirectClient(std::string name) {
@@ -44,10 +52,10 @@ void Table::addNoticedClients(std::string name) {
 }
 
 void Table::addPathToServer(std::string name) {
-    this->pathToServer.insert(name);
+    //this->pathToServer.insert(name);
 }
 void Table::prepareNewServer() {
-    this->pathToServer.clear();
+    //this->pathToServer.clear();
     this->noticedNodes.clear();
     this->noticedClients.clear();
     // Should I clear noticed clients?

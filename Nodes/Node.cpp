@@ -15,7 +15,7 @@ Node::Node(std::string ip, uint16_t port, std::string name) {
     if (ip == "localhost") {
         ip = "127.0.0.1";
     }
-    this->serverName = "";
+    //this->serverName = "";
     this->ip = std::move(ip);
     this->port = port;
     this->name = std::move(name);
@@ -489,17 +489,28 @@ void Node::processServerMessage(const unsigned char* packet) {
 
     srcName = this->getSrcIp(packet) + ":" + std::to_string(this->getSrcPort(packet));
     myName = this->ip + ":" + std::to_string((this->port));
-    //std::cout << "process server message from: " << srcName << std::endl;
-    //std::cout << "server: " << packetServer << std::endl;
+    std::cout << "process server message from: " << srcName << std::endl;
+    std::cout << "server: " << packetServer << std::endl;
 
-    // current serverName is different than the broadcasted one
-    if (this->serverName != packetServer) {
-        this->serverName = packetServer;
+    int j = 0;
+    int found = 0;
+    for (j; j < this->serverName.size(); j++){
+        if (this->serverName[j] == packetServer){
+            found = 1;
+            break;
+        }
+    }
+
+    std::cout << "forororororo" << std::endl;
+
+    if (!found){
+        this->serverName.push_back(packetServer);
         this->getTable()->prepareNewServer();
     }
+
     // if the sender is the server itself
     if (srcName == packetServer) {
-        this->getTable()->pathToServer.insert(packetServer);
+        this->getTable()->pathToServer[j].insert(packetServer);
     } else {
         // check if i should add to the path to the server by checking the difference in direct routers
         // if it has at least 1 direct router
@@ -538,7 +549,7 @@ void Node::processServerMessage(const unsigned char* packet) {
 
             // if there is at least one that the other has that i dont
             if (!diff.empty() || directToServer == 1) {
-                this->getTable()->pathToServer.insert(srcName);
+                this->getTable()->pathToServer[j].insert(srcName);
             }
         }
     }

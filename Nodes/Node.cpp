@@ -555,9 +555,9 @@ void Node::processServerMessage(const unsigned char* packet) {
             if (!diff.empty() || directToServer == 1) {
                 if (!found) {
                     if (this->getTable()->pathToServer.size() == 0) {
-                        this->getTable()->pathToServer.push_back({packetServer});
+                        this->getTable()->pathToServer.push_back({srcName});
                     } else {
-                        this->getTable()->pathToServer.back().insert(packetServer);
+                        this->getTable()->pathToServer.back().insert(srcName);
                     }
                 } else {
                     this->getTable()->pathToServer[j].insert(srcName);

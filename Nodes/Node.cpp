@@ -289,11 +289,11 @@ unsigned char* Node::makePacket(std::string ip_src, std::string port_src, std::s
 
 std::string Node::searchPathToServer() {
     std::string usefulRouter;
+    std::cout << "getting path to server" << std::endl;
     std::set<std::string>* pathToServer = this->getTable()->getPathToServer();
+
     auto pathIterator = pathToServer->begin();
     usefulRouter = *pathIterator;
-    pathToServer->erase(pathIterator);
-    pathToServer->insert(*pathIterator);
     return usefulRouter;
 }
 

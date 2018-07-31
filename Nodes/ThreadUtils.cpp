@@ -26,6 +26,7 @@ void sendOneFragmentedMessage(T *n, unsigned char *packet, std::string name) {
     if ((type == ACK_MESSAGE || type == CHAT_MESSAGE || type == MIGRATE_MESSAGE) && !n->getServerBit(packet)) {
         std::cout << "buscar path" << std::endl;
         usefulRouter = n->searchPathToServer();
+        std::cout << "path es: " << usefulRouter << std::endl;
         sd = n->getSocketDescriptor(usefulRouter);
 
     } else {
@@ -112,16 +113,6 @@ void cServer(C* c, unsigned char* packet, std::string nameSrc, std::string nameD
                               c->getSocketDescriptor(c->getTable()->direct_routers.front()), c->getSeqNum(packet), c->getServerBit(packet));
 
                //Send Packet
-               /*
-               while(c->getTotalLength(packet) > c->connections.front().second.second){
-                   std::pair<unsigned char*, unsigned char*> f_packets = c->fragment(packet, c->connections.front().second.second);
-                   sleep(c->connections.front().second.first);
-                   send(c->getSocketDescriptor(c->getTable()->direct_routers.front()), f_packets.first, (size_t) c->getTotalLength(f_packets.first), 0);
-                   packet = f_packets.second;
-               }
-               sleep(c->connections.front().second.first);
-               send(c->getSocketDescriptor(c->getTable()->direct_routers.front()), packet, (size_t) c->getTotalLength(packet), 0);*/
-
                c->sendPacket(packet);
            }
        }

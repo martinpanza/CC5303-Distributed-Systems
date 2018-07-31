@@ -438,6 +438,8 @@ void tServerTh(T* n){
                 nameDest += ":";
                 nameDest += portDest;
 
+                int alreadyProcessed = n->getServerBit(packet);
+
                 // should work
                 n->setServerBit(packet, 1);
 
@@ -457,91 +459,99 @@ void tServerTh(T* n){
                 if (n->getType(packet) == TABLE_MESSAGE) {
                     n->processTablePacket(packet);
                 } else if (n->getType(packet) == CHAT_MESSAGE) {
-                    if (std::find(n->serverWaitingForAcks.begin(), n->serverWaitingForAcks.end(), std::pair<std::string,
-                            std::string>{nameSrc, nameDest}) != n->serverWaitingForAcks.end()) {
-                        sendFragmentedMessages(n, nameDest, packet);
-                    } else {
-                        if (n->getFragmentBit(packet)) {
-                            int found = 0;
-                            for (int i = 0; i < n->serverFragmentedPackets.size(); i++) {
-                                if (nameSrc == n->serverFragmentedPackets[i].first.first &&
-                                    nameDest == n->serverFragmentedPackets[i].first.second) {
-                                    std::cout << "Frag: " << n->getMessage(packet) << std::endl;
-                                    std::cout << "Expecting " << n->serverFragmentedPackets[i].second.first << std::endl;
+                    if (!alreadyProcessed) {
+                        if (std::find(n->serverWaitingForAcks.begin(), n->serverWaitingForAcks.end(),
+                                      std::pair<std::string,
+                                              std::string>{nameSrc, nameDest}) != n->serverWaitingForAcks.end()) {
+                            sendFragmentedMessages(n, nameDest, packet);
+                        } else {
+                            if (n->getFragmentBit(packet)) {
+                                int found = 0;
+                                for (int i = 0; i < n->serverFragmentedPackets.size(); i++) {
+                                    if (nameSrc == n->serverFragmentedPackets[i].first.first &&
+                                        nameDest == n->serverFragmentedPackets[i].first.second) {
+                                        std::cout << "Frag: " << n->getMessage(packet) << std::endl;
+                                        std::cout << "Expecting " << n->serverFragmentedPackets[i].second.first
+                                                  << std::endl;
 
-                                    if (n->getSeqNum(packet) == n->serverFragmentedPackets[i].second.first) {
-                                        std::cout << "Good seqNUm " << n->getSeqNum(packet) << std::endl;
+                                        if (n->getSeqNum(packet) == n->serverFragmentedPackets[i].second.first) {
+                                            std::cout << "Good seqNUm " << n->getSeqNum(packet) << std::endl;
 
-                                        n->serverFragmentedPackets[i].second.second.push_back(packet);
+                                            n->serverFragmentedPackets[i].second.second.push_back(packet);
 
-                                        std::pair<int, std::string> result = n->checkFragmentArrival(
-                                                n->serverFragmentedPackets[i].second.second);
+                                            std::pair<int, std::string> result = n->checkFragmentArrival(
+                                                    n->serverFragmentedPackets[i].second.second);
 
-                                        if (result.first) {
-                                            std::cout << "Paso el mensaje de " << nameSrc << " para " << nameDest
-                                                      << std::endl;
+                                            if (result.first) {
+                                                std::cout << "Paso el mensaje de " << nameSrc << " para " << nameDest
+                                                          << std::endl;
 
-                                            usefulRouter = n->searchConnectedRouter(nameSrc);
-                                            sd = n->getSocketDescriptor(usefulRouter);
+                                                usefulRouter = n->searchConnectedRouter(nameSrc);
+                                                sd = n->getSocketDescriptor(usefulRouter);
 
-                                            //send ack
-                                            sleep(n->getDelay(usefulRouter));
-                                            n->sendMessage(n->ip, std::to_string(n->port), ipSrc, portSrc, SACK_MESSAGE,
-                                                           std::string(""), sd, n->getSeqNum(packet), n->getServerBit(packet));
+                                                //send ack
+                                                sleep(n->getDelay(usefulRouter));
+                                                n->sendMessage(n->ip, std::to_string(n->port), ipSrc, portSrc,
+                                                               SACK_MESSAGE,
+                                                               std::string(""), sd, n->getSeqNum(packet),
+                                                               n->getServerBit(packet));
 
-                                            std::cout << "Envie SACK a " << nameSrc << std::endl;
+                                                std::cout << "Envie SACK a " << nameSrc << std::endl;
 
-                                            packet = n->makePacket(std::move(ipSrc), std::move(portSrc),
-                                                                   std::move(ipDest),
-                                                                   std::move(portDest), CHAT_MESSAGE, result.second,
-                                                                   n->getSeqNum(packet), n->getServerBit(packet));
+                                                packet = n->makePacket(std::move(ipSrc), std::move(portSrc),
+                                                                       std::move(ipDest),
+                                                                       std::move(portDest), CHAT_MESSAGE, result.second,
+                                                                       n->getSeqNum(packet), n->getServerBit(packet));
 
-                                            sendFragmentedMessages(n, nameDest, packet);
+                                                sendFragmentedMessages(n, nameDest, packet);
 
-                                            std::cout << "Envie mensaje a " << nameDest << std::endl;
+                                                std::cout << "Envie mensaje a " << nameDest << std::endl;
 
-                                            n->serverFragmentedPackets.erase(n->serverFragmentedPackets.begin() + i);
+                                                n->serverFragmentedPackets.erase(
+                                                        n->serverFragmentedPackets.begin() + i);
 
-                                            n->serverWaitingForAcks.push_back({nameSrc, nameDest});
+                                                n->serverWaitingForAcks.push_back({nameSrc, nameDest});
+                                            }
+
+                                        } else {
+                                            std::cout << "Wrong seqNUm " << n->getSeqNum(packet) << std::endl;
                                         }
 
-                                    } else {
-                                        std::cout << "Wrong seqNUm " << n->getSeqNum(packet) << std::endl;
+                                        found = 1;
+                                        break;
                                     }
-
-                                    found = 1;
-                                    break;
                                 }
+                                if (found == 0) {
+                                    std::vector<unsigned char *> v;
+                                    v.push_back(packet);
+                                    std::pair<std::pair<std::string, std::string>, std::pair<int, std::vector<unsigned char *>>> newFragmentedPacket = {{nameSrc,        nameDest},
+                                                                                                                                                        {n->getSeqNum(
+                                                                                                                                                                packet), v}};
+                                    n->serverFragmentedPackets.push_back(newFragmentedPacket);
+                                }
+                            } else {
+                                std::cout << "Paso mensaje de " << nameSrc << " para " << nameDest << std::endl;
+
+                                usefulRouter = n->searchConnectedRouter(nameSrc);
+                                sd = n->getSocketDescriptor(usefulRouter);
+
+                                //send ack
+                                sleep(n->getDelay(usefulRouter));
+                                n->sendMessage(n->ip, std::to_string(n->port), ipSrc, portSrc, SACK_MESSAGE,
+                                               std::string(""), sd, n->getSeqNum(packet), n->getServerBit(packet));
+
+                                std::cout << "Envie SACK a " << nameSrc << std::endl;
+
+                                sendFragmentedMessages(n, nameDest, packet);
+
+                                std::cout << "Envie mensaje a " << nameDest << std::endl;
+
+                                n->serverWaitingForAcks.push_back({nameSrc, nameDest});
                             }
-                            if (found == 0) {
-                                std::vector<unsigned char *> v;
-                                v.push_back(packet);
-                                std::pair<std::pair<std::string, std::string>, std::pair<int, std::vector<unsigned char *>>> newFragmentedPacket = {{nameSrc,        nameDest},
-                                                                                                                                                    {n->getSeqNum(
-                                                                                                                                                            packet), v}};
-                                n->serverFragmentedPackets.push_back(newFragmentedPacket);
-                            }
-                        } else {
-                            std::cout << "Paso mensaje de " << nameSrc << " para " << nameDest << std::endl;
-
-                            usefulRouter = n->searchConnectedRouter(nameSrc);
-                            sd = n->getSocketDescriptor(usefulRouter);
-
-                            //send ack
-                            sleep(n->getDelay(usefulRouter));
-                            n->sendMessage(n->ip, std::to_string(n->port), ipSrc, portSrc, SACK_MESSAGE,
-                                           std::string(""), sd, n->getSeqNum(packet), n->getServerBit(packet));
-
-                            std::cout << "Envie SACK a " << nameSrc << std::endl;
-
-                            sendFragmentedMessages(n, nameDest, packet);
-
-                            std::cout << "Envie mensaje a " << nameDest << std::endl;
-
-                            n->serverWaitingForAcks.push_back({nameSrc, nameDest});
                         }
+                    } else {
+                        sendOneFragmentedMessage(n, packet, nameDest);
                     }
-
                 } else if (n->getType(packet) == SACK_MESSAGE
                         || n->getType(packet) == RESEND_MESSAGE) {
                     usefulRouter = n->searchConnectedRouter(nameDest);
@@ -558,45 +568,49 @@ void tServerTh(T* n){
 
 
                 else {
-                    int found = 0;
-                    for (int i = 0; i < n->serverWaitingForAcks.size(); i++) {
-                        if (nameDest == n->serverWaitingForAcks[i].first &&
-                            nameSrc == n->serverWaitingForAcks[i].second) {
-                            std::cout << "Paso ACK de " << nameSrc << " para " << nameDest << std::endl;
-                            n->serverWaitingForAcks.erase(n->serverWaitingForAcks.begin() + i);
+                    if (!alreadyProcessed) {
+                        int found = 0;
+                        for (int i = 0; i < n->serverWaitingForAcks.size(); i++) {
+                            if (nameDest == n->serverWaitingForAcks[i].first &&
+                                nameSrc == n->serverWaitingForAcks[i].second) {
+                                std::cout << "Paso ACK de " << nameSrc << " para " << nameDest << std::endl;
+                                n->serverWaitingForAcks.erase(n->serverWaitingForAcks.begin() + i);
 
-                            usefulRouter = n->searchConnectedRouter(nameSrc);
-                            sd = n->getSocketDescriptor(usefulRouter);
+                                usefulRouter = n->searchConnectedRouter(nameSrc);
+                                sd = n->getSocketDescriptor(usefulRouter);
 
-                            //send ack
-                            sleep(n->getDelay(usefulRouter));
-                            n->sendMessage(n->ip, std::to_string(n->port), ipSrc, portSrc, SACK_MESSAGE,
-                                           nameDest, sd, n->getSeqNum(packet), n->getServerBit(packet));
+                                //send ack
+                                sleep(n->getDelay(usefulRouter));
+                                n->sendMessage(n->ip, std::to_string(n->port), ipSrc, portSrc, SACK_MESSAGE,
+                                               nameDest, sd, n->getSeqNum(packet), n->getServerBit(packet));
 
-                            std::cout << "Envie SACK a " << portSrc << std::endl;
+                                std::cout << "Envie SACK a " << portSrc << std::endl;
 
-                            //send message
+                                //send message
+                                usefulRouter = n->searchConnectedRouter(nameDest);
+                                sd = n->getSocketDescriptor(usefulRouter);
+
+                                sleep(n->getDelay(usefulRouter));
+                                send(sd, packet, (size_t) n->getTotalLength(packet), 0);
+
+                                std::cout << "Envie ACK a " << nameDest << std::endl;
+
+                                found = 1;
+
+                                break;
+                            }
+                        }
+
+                        if (!found) {
+                            //send it anyway
                             usefulRouter = n->searchConnectedRouter(nameDest);
                             sd = n->getSocketDescriptor(usefulRouter);
 
                             sleep(n->getDelay(usefulRouter));
                             send(sd, packet, (size_t) n->getTotalLength(packet), 0);
-
-                            std::cout << "Envie ACK a " << nameDest << std::endl;
-
-                            found = 1;
-
-                            break;
                         }
-                    }
-
-                    if (!found) {
-                        //send it anyway
-                        usefulRouter = n->searchConnectedRouter(nameDest);
-                        sd = n->getSocketDescriptor(usefulRouter);
-
-                        sleep(n->getDelay(usefulRouter));
-                        send(sd, packet, (size_t) n->getTotalLength(packet), 0);
+                    } else {
+                        sendOneFragmentedMessage(n, packet, nameDest);
                     }
                 }
             } else {

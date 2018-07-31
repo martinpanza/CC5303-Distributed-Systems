@@ -81,7 +81,7 @@ int T::run() {
             std::unique_lock<std::mutex> lk(this->serverMutex);
             this->serverCond.wait(lk);
             lk.unlock();
-
+            this->getTable()->prepareNewServer();
             this->announceServer(this->ip + ":" + std::to_string(this->port), "");
 
             std::thread server (tServerTh, this);

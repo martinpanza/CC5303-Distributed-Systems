@@ -501,7 +501,7 @@ void Node::processServerMessage(const unsigned char* packet) {
         }
     }
 
-    std::cout << "forororororo" << std::endl;
+    std::cout << found << std::endl;
 
     if (!found){
         this->serverName.push_back(packetServer);
@@ -510,7 +510,11 @@ void Node::processServerMessage(const unsigned char* packet) {
 
     // if the sender is the server itself
     if (srcName == packetServer) {
-        this->getTable()->pathToServer[j].insert(packetServer);
+        if (!found) {
+            this->getTable()->pathToServer.push_back({packetServer});
+        } else {
+            this->getTable()->pathToServer[j].insert(packetServer);
+        }
     } else {
         // check if i should add to the path to the server by checking the difference in direct routers
         // if it has at least 1 direct router
@@ -549,7 +553,15 @@ void Node::processServerMessage(const unsigned char* packet) {
 
             // if there is at least one that the other has that i dont
             if (!diff.empty() || directToServer == 1) {
-                this->getTable()->pathToServer[j].insert(srcName);
+                if (!found) {
+                    if (this->getTable()->pathToServer.size() == 0) {
+                        this->getTable()->pathToServer.push_back({packetServer});
+                    } else {
+                        this->getTable()->pathToServer.back().insert(packetServer);
+                    }
+                } else {
+                    this->getTable()->pathToServer[j].insert(srcName);
+                }
             }
         }
     }

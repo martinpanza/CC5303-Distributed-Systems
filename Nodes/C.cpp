@@ -173,3 +173,14 @@ int C::sendPacket(unsigned char *packet) {
     send(this->getSocketDescriptor(this->getTable()->direct_routers.front()), packet, (size_t) this->getTotalLength(packet), 0);
     return 0;
 }
+
+void C::resendAcks(int serverBit) {
+    for (int i = 0; i < this->sentAcks.size(); i++) {
+        std::vector<std::string> split;
+        splitString(this->sentAcks[i].first, split, ':');
+        this->sendMessage(this->ip, std::to_string(this->port), split[0], split[1],
+                       ACK_MESSAGE, "",
+                          this->getSocketDescriptor(this->getTable()->direct_routers.front()), this->sentAcks[i].second,
+                       serverBit);
+    }
+}

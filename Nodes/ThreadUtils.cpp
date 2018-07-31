@@ -226,15 +226,7 @@ void cClient(C* c, unsigned char* packet, std::string nameSrc, std::string ipSrc
                            c->getSocketDescriptor(c->getTable()->direct_routers.front()), c->currentSequenceNumber,
                            serverBit);
         }
-        for (int i = 0; i < c->sentAcks.size(); i++) {
-            std::vector<std::string> split;
-            splitString(c->sentAcks[i].first, split, ':');
-            c->sendMessage(c->ip, std::to_string(c->port), split[0], split[1],
-                           ACK_MESSAGE, "",
-                           c->getSocketDescriptor(c->getTable()->direct_routers.front()), c->sentAcks[i].second,
-                           serverBit);
-        }
-
+        c->resendAcks(serverBit);
     } else if (c->getType(packet) == NACK_MESSAGE) {
         c->waitingForAck = 0;
         c->waitingForSack = 0;

@@ -332,6 +332,14 @@ void cServerTh(C *c){
     (c->mtx).lock();
     c->message_queue.clear();
     (c->mtx).unlock();
+    if (c->waitingForSack) {
+        c->increaseSequenceNumber();
+        c->sendMessage(c->ip, std::to_string(c->port), c->ipSent, c->portSent,
+                       CHAT_MESSAGE, c->sentMessage,
+                       c->getSocketDescriptor(c->getTable()->direct_routers.front()), c->currentSequenceNumber,
+                       0);
+    }
+    c->resendAcks(0);
     cSendResendMessages(getResendList(c), c);
     increaseExpectedSeqNumber(c);
 

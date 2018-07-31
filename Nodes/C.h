@@ -24,6 +24,8 @@ public:
     int sendPacket(unsigned char* packet);
     void addConnection(std::string ip, std::string port);
     void increaseSequenceNumber();
+
+    void resendAcks(int serverBit);
 };
 
 

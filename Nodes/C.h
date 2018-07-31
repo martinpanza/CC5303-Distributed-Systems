@@ -10,14 +10,22 @@
 class C : public Node{
     using Node::Node;
 
-private:
-    int waitingForAck = 0;
-
 public:
-
+    int waitingForAck = 0;
+    int waitingForSack = 0;
+    int currentSequenceNumber = 0;
+    std::string sentMessage = "";
+    std::string ipSent = "";
+    std::string portSent = "";
+    std::vector<std::pair<std::string, int>> sentAcks;
     int run() override;
-    int sendMessage(std::string ip_src, std::string port_src, std::string ip_dest, std::string port_dest, int type, std::string message, int sd) override;
+    int sendMessage(std::string ip_src, std::string port_src, std::string ip_dest, std::string port_dest, int type,
+                    std::string message, int sd, int sequenceNumber, int serverBit) override;
+    int sendPacket(unsigned char* packet);
     void addConnection(std::string ip, std::string port);
+    void increaseSequenceNumber();
+
+    void resendAcks(int serverBit);
 };
 
 

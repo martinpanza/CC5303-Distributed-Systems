@@ -13,12 +13,15 @@ class T : public Node {
 public:
     int run() override;
     void addConnection(std::string ip, std::string port, std::string type);
-    int sendMessage(std::string ip_src, std::string port_src, std::string ip_dest, std::string port_dest, int type, std::string message, int sd) override;
+    int sendMessage(std::string ip_src, std::string port_src, std::string ip_dest, std::string port_dest, int type,
+                    std::string message, int sd, int sequenceNumber, int serverBit) override;
     std::string makeTableMessage();
     void processTablePacket(const unsigned char* packet);
     void broadcastTable();
 
     void shareTable(std::string ip, std::string port, int sd);
+
+    bool checkC(std::string basic_string);
 };
 
 

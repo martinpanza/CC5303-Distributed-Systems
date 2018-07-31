@@ -14,3 +14,8 @@ void acceptTh(Node *n, int sd);
 void receiveTh(Node *n, int sd);
 void sendTh(T* n);
 void cProcessTh(C*n);
+void cServerTh(C *n);
+void tServerTh(T *n);
+void offServerTh(Node* n);
+void tMigrateServerTh(T *n, std::string sIP, std::string sPort, std::string type);
+void cMigrateServerTh(C *n, std::string sIP, std::string sPort, std::string type);

@@ -7,6 +7,7 @@
 #include "socket.h"
 #include "ThreadFun.h"
 #include <thread>
+#include <vector>
 
 int random_int(int min, int max) {
     std::random_device rd;
@@ -24,6 +25,17 @@ int random_mtu() {
     return arrayNum[RandIndex];
 }
 
+int T::sendMessage(std::string ip_src, std::string port_src, std::string ip_dest, std::string port_dest, int type,
+                   std::string message, int sd, int sequenceNumber, int serverBit) {
+    // std::cout << "sending message..." << std::endl;
+    unsigned char* packet = this->makePacket(std::move(ip_src), std::move(port_src), std::move(ip_dest),
+                                             std::move(port_dest), type, message, sequenceNumber, serverBit);
+    auto totalLength = (size_t) this->getTotalLength(packet);
+    send(sd, packet, totalLength, 0);
+    return 0;
+}
+
+
 int T::run() {
     int server_fd = serverSocket(this->port);
 
@@ -35,6 +47,10 @@ int T::run() {
 
     std::string s;
     std::string connect_ = "connect";
+    std::string startServer_ = "start_server";
+    std::string stopServer_ = "stop_server";
+    std::string backToNormal_ = "back_to_normal";
+    std::string migrate_ = "migrate";
     std::vector<std::string> words;
     while(std::getline(std::cin, s)) {
         splitString(s, words, ' ');
@@ -57,6 +73,70 @@ int T::run() {
 
             std::thread receiver (receiveTh, this ,client_sd);
             receiver.detach();
+        } else if (words[0] == startServer_) {
+
+            this->iAmAServer = 1;
+            this->off = 0;
+
+            std::unique_lock<std::mutex> lk(this->serverMutex);
+            this->serverCond.wait(lk);
+            lk.unlock();
+
+            this->announceServer(this->ip + ":" + std::to_string(this->port), "");
+
+            std::thread server (tServerTh, this);
+            server.detach();
+
+        } else if (words[0] == stopServer_) {
+            this->iAmAServer = 0;
+            this->off = 1;
+
+            std::unique_lock<std::mutex> lk(this->serverMutex);
+            this->serverCond.wait(lk);
+            lk.unlock();
+
+            std::thread offServer (offServerTh, this);
+            offServer.detach();
+        } else if (words[0] == backToNormal_) {
+            this->iAmAServer = 0;
+            this->off = 0;
+
+            std::unique_lock<std::mutex> lk(this->serverMutex);
+            this->serverCond.wait(lk);
+            lk.unlock();
+
+            std::thread sender (sendTh, this);
+            sender.detach();
+        } else if (words[0] == migrate_){
+            this->iAmAServer = 0;
+            this->off = 0;
+            this->migrating = 1;
+
+            if (words[1] == "localhost"){
+                words[1] = "127.0.0.1";
+            }
+
+            std::unique_lock<std::mutex> lk(this->serverMutex);
+            this->serverCond.wait(lk);
+            lk.unlock();
+
+            std::thread migrateServer (tMigrateServerTh, this, words[1], words[2], words[3]);
+            migrateServer.detach();
+
+            std::unique_lock<std::mutex> lck(this->serverMutex);
+            this->serverCond.wait(lck);
+            lck.unlock();
+
+            std::thread sender (sendTh, this);
+            sender.detach();
+        } else if (words[0] == "show_server") {
+            std::cout << this->serverName << std::endl;
+            for (std::string router : this->getTable()->pathToServer) {
+                std::cout << router << " -- ";
+            }
+            std::cout << std::endl;
+        } else if (words[0] == "show_table") {
+            this->getTable()->printTable();
         }
     }
 }
@@ -96,7 +176,8 @@ void T::broadcastTable() {
     std::vector<std::string> ipport;
     for (std::string router : (*directRouters)) {
         splitString(router, ipport, ':');
-        this->sendMessage(this->ip, std::to_string(this->port), ipport[0], ipport[1], TABLE_MESSAGE, this->makeTableMessage(), this->getSocketDescriptor(router));
+        this->sendMessage(this->ip, std::to_string(this->port), ipport[0], ipport[1], TABLE_MESSAGE,
+                          this->makeTableMessage(), this->getSocketDescriptor(router), 255, 1);
     }
 }
 
@@ -105,7 +186,7 @@ void T::shareTable(std::string ip, std::string port, int sd) {
         //std::cout << "sharetable" << std::endl;
         //std::cout << this->makeTableMessage() << std::endl;
         this->sendMessage(this->ip, std::to_string(this->port), std::move(ip), std::move(port),
-                          TABLE_MESSAGE, this->makeTableMessage(), sd);
+                          TABLE_MESSAGE, this->makeTableMessage(), sd, 255, 1);
     }
 }
 
@@ -191,12 +272,12 @@ void T::addConnection(std::string ip, std::string port, std::string type) {
     this->connections.push_back(P);
 }
 
-int T::sendMessage(std::string ip_src, std::string port_src, std::string ip_dest, std::string port_dest, int type, std::string message, int sd) {
-    // std::cout << "sending message..." << std::endl;
-    unsigned char* packet = this->makePacket(std::move(ip_src), std::move(port_src), std::move(ip_dest), std::move(port_dest), type, message);
-    auto totalLength = (size_t) this->getTotalLength(packet);
-    send(sd, packet, totalLength, 0);
-    return 0;
+
+bool T::checkC(std::string name) {
+    auto it = std::find(this->downC.begin(),
+                        this->downC.end(), name);
+
+    return it != this->downC.end();
 }
 
 

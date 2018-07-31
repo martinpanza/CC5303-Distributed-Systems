@@ -15,6 +15,7 @@ Node::Node(std::string ip, uint16_t port, std::string name) {
     if (ip == "localhost") {
         ip = "127.0.0.1";
     }
+    this->serverName = "";
     this->ip = std::move(ip);
     this->port = port;
     this->name = std::move(name);
@@ -27,11 +28,12 @@ int Node::run() {
 
 int Node::sendMessage(const std::string ip_src, const std::string port_src,
                       const std::string ip_dest, const std::string port_dest,
-                      const int type, const std::string message, const int sd) {
+                      const int type, const std::string message, const int sd, int sequenceNumber, int serverBit) {
     std::cout << ip_src << ":" << port_src << std::endl;
     std::cout << ip_dest << ":" << port_dest << " " << type << " " << message;
     return 0;
 }
+
 
 Table* Node::getTable() {
     return &(this->table);
@@ -77,6 +79,22 @@ int Node::getFragmentBit(const unsigned char* packet) {
 
 void Node::setFragmentBit(unsigned char* packet, int fragmentBit) {
     packet[18] = (unsigned char) fragmentBit;
+}
+
+int Node::getServerBit(const unsigned char* packet) {
+    return (int) packet[19];
+}
+
+void Node::setServerBit(unsigned char* packet, int serverBit) {
+    packet[19] = (unsigned char) serverBit;
+}
+
+int Node::getSeqNum(const unsigned char* packet) {
+    return (int) packet[20];
+}
+
+void Node::setSeqNum(unsigned char* packet, int seqNum) {
+    packet[20] = (unsigned char) seqNum;
 }
 
 std::string Node::getSrcIp(const unsigned char* packet) {
@@ -175,14 +193,16 @@ std::pair<unsigned char *, unsigned char*> Node::fragment(unsigned char* packet,
     std::string message = this->getMessage(packet);
 
     int top_message_size = MTU - HEADER_SIZE;
-    int bot_message_size = (int) message.length() - MTU - HEADER_SIZE;
+    //int bot_message_size = (int) message.length() - MTU - HEADER_SIZE;
 
     std::string top_message = message.substr(0, (unsigned long) top_message_size),
             bot_message = message.substr(top_message_size);
 
 
-    unsigned char* top_packet = this->makePacket(ip_src, port_src, ip_dest, port_dest, type, top_message);
-    unsigned char* bot_packet = this->makePacket(ip_src, port_src, ip_dest, port_dest, type, bot_message);
+    unsigned char* top_packet = this->makePacket(ip_src, port_src, ip_dest, port_dest,
+                                                 type, top_message, this->getSeqNum(packet), this->getServerBit(packet));
+    unsigned char* bot_packet = this->makePacket(ip_src, port_src, ip_dest, port_dest,
+                                                 type, bot_message, this->getSeqNum(packet), this->getServerBit(packet));
 
     if (!this->getFragmentBit(packet)){
         this->setLastBit(bot_packet, 1);
@@ -206,13 +226,14 @@ std::pair<unsigned char *, unsigned char*> Node::fragment(unsigned char* packet,
 
 
 unsigned char* Node::makePacket(std::string ip_src, std::string port_src, std::string ip_dest,
-                                std::string port_dest, int type, std::string message) {
+                                std::string port_dest, int type, std::string message, int sequenceNumber, int serverBit) {
     auto packet = (unsigned char*) malloc((HEADER_SIZE + message.length()) * sizeof(unsigned char));
 
     std::vector<std::string> ip, ip_d;
     //splitString(this->ip, ip, '.');
     splitString(ip_src, ip, '.');
     splitString(ip_dest, ip_d, '.');
+
     // Source IP
     for (int i = 0; i < ip.size(); i++) {
         packet[i] = (unsigned char)(stoi(ip[i]));
@@ -224,7 +245,6 @@ unsigned char* Node::makePacket(std::string ip_src, std::string port_src, std::s
     //packet[5] = (unsigned char) (this->port & 0xFF); // lo
     packet[4] = (unsigned char) (sport >> 8); // hi
     packet[5] = (unsigned char) (sport & 0xFF); // lo
-
 
     // Destination IP
     for (int i = 0; i < ip_d.size(); i++) {
@@ -243,7 +263,7 @@ unsigned char* Node::makePacket(std::string ip_src, std::string port_src, std::s
     packet[13] = (unsigned char) ((uint16_t) (HEADER_SIZE + message.length()) >> 8);
     packet[14] = (unsigned char) ((uint16_t) (HEADER_SIZE + message.length()) & 0xFF);
 
-    // Fragmented
+    // Last bit
     packet[15] = (unsigned char) 0;
 
     // Offset
@@ -251,13 +271,30 @@ unsigned char* Node::makePacket(std::string ip_src, std::string port_src, std::s
     packet[16] = (unsigned char) (starting_offset >> 8);
     packet[17] = (unsigned char) (starting_offset & 0xFF);
 
-    // Last bit
+    // Fragmented
     packet[18] = (unsigned char) 0;
+
+    // Server bit
+    packet[19] = (unsigned char) serverBit;
+
+    // Sequence number
+    packet[20] = (unsigned char) sequenceNumber;
+
     // Message
     for (int i = 0; i < message.length(); i++) {
-        packet[i + 19] = (unsigned char) message[i];
+        packet[i + 21] = (unsigned char) message[i];
     }
     return packet;
+}
+
+std::string Node::searchPathToServer() {
+    std::string usefulRouter;
+    std::set<std::string>* pathToServer = this->getTable()->getPathToServer();
+    auto pathIterator = pathToServer->begin();
+    usefulRouter = *pathIterator;
+    pathToServer->erase(pathIterator);
+    pathToServer->insert(*pathIterator);
+    return usefulRouter;
 }
 
 std::string Node::searchConnectedRouter(std::string name) {
@@ -297,6 +334,15 @@ int Node::getSocketDescriptor(std::string name) {
         }
     }
     return -1;
+}
+
+std::string Node::getNameBySocketDescriptor(int sd){
+    for (int i = 0; i < this->socketDescriptors.size(); i++){
+        if (sd == this->socketDescriptors[i].first){
+            return this->socketDescriptors[i].second;
+        }
+    }
+    return "";
 }
 
 int Node::getDelay(std::string name) {
@@ -345,3 +391,159 @@ std::pair<int, std::string> Node::checkFragmentArrival(std::vector<unsigned char
     }
     return result;
 };
+// message is the serverName
+// format of message will be serverName-router_1;router_2;...;router_n-client_1;client_2
+void Node::announceServer(std::string message, std::string initialSender) {
+    std::vector<std::string>* directRouters =(this->getTable())->getDirectRouters();
+    std::vector<std::string>* directClients =(this->getTable())->getDirectClients();
+    std::vector<std::string> ipport;
+    std::set<std::string> routerSet, clientSet, clientDiff, diff;
+    message += "-";
+    //message += ";";
+    std::cout << "getting routers" << std::endl;
+    if (directRouters->size() > 0) {
+        for (int i = 0; i < directRouters->size() - 1; i++) {
+            message += (*directRouters)[i];
+            message += ";";
+            routerSet.insert((*directRouters)[i]);
+        }
+        message += (*directRouters)[directRouters->size() - 1];
+        routerSet.insert((*directRouters)[directRouters->size() - 1]);
+    }
+
+    message += "-";
+
+    std::cout << "getting clients" << std::endl;
+    if (directClients->size() > 0) {
+        for (int i = 0; i < directClients->size() - 1; i++) {
+            message += (*directClients)[i];
+            message += ";";
+            clientSet.insert((*directClients)[i]);
+        }
+        message += (*directClients)[directClients->size() - 1];
+        clientSet.insert((*directClients)[directClients->size() - 1]);
+    }
+    // dont want to send the message twice to a node
+    std::set_difference(routerSet.begin(), routerSet.end(), this->getTable()->noticedNodes.begin(), this->getTable()->noticedNodes.end(), std::inserter(diff, diff.end()));
+    std::cout << "senting to unnoticed ones" << std::endl;
+    for (std::string router : diff) {
+        std::cout << "unnoticed router: " << router << std::endl;
+        if (router != initialSender) {
+            splitString(router, ipport, ':');
+            this->sendMessage(this->ip, std::to_string(this->port), ipport[0], ipport[1], NEW_SRV_MESSAGE, message,
+                              this->getSocketDescriptor(router), 0, 1);
+
+            this->getTable()->addNoticedNodes(router);
+        }
+    }
+
+    std::set_difference(clientSet.begin(), clientSet.end(), this->getTable()->noticedClients.begin(), this->getTable()->noticedClients.end(), std::inserter(clientDiff, clientDiff.end()));
+
+    for (std::string client : clientDiff) {
+        std::cout << "unnoticed client: " << client << std::endl;
+        splitString(client, ipport, ':');
+        this->sendMessage(this->ip, std::to_string(this->port), ipport[0], ipport[1], NEW_SRV_MESSAGE, message, this->getSocketDescriptor(client), 0, 1);
+        this->getTable()->addNoticedClients(client);
+    }
+
+}
+
+int Node::isDirectConnection(std::string name) {
+    int directConn = 0;
+    std::vector<std::string>* directRouters =(this->getTable())->getDirectRouters();
+    std::vector<std::string>* directClients =(this->getTable())->getDirectClients();
+    for (std::string d : (*directClients)) {
+        if (d == name) {
+            directConn = 1;
+            break;
+        }
+    }
+    if (!directConn) {
+        for (std::string d : (*directRouters)) {
+            if (d == name) {
+                directConn = 1;
+                break;
+            }
+        }
+    }
+    return directConn;
+}
+
+
+void Node::processServerMessage(const unsigned char* packet) {
+    std::vector<std::string> routersVec, clientsVec, serverRoutersClients;
+    // routers from packet and my routers
+    std::set<std::string> routers, myRouters, diff;
+    std::string packetServer, srcName, myName, packetMessage;
+    std::vector<std::string>* myDirectRouters =(this->getTable())->getDirectRouters();
+    int directToServer = 0;
+    packetMessage = this->getMessage(packet);
+    //std::cout << "separating all" << std::endl;
+    splitString(packetMessage, serverRoutersClients, '-');
+    //std::cout << "separating routers" << std::endl;
+    splitString(serverRoutersClients[1], routersVec, ';');
+    //std::cout << "separating clients" << std::endl;
+    splitString(serverRoutersClients[2], clientsVec, ';');
+    //std::cout << "getting server" << std::endl;
+    packetServer = serverRoutersClients[0];
+
+    srcName = this->getSrcIp(packet) + ":" + std::to_string(this->getSrcPort(packet));
+    myName = this->ip + ":" + std::to_string((this->port));
+    //std::cout << "process server message from: " << srcName << std::endl;
+    //std::cout << "server: " << packetServer << std::endl;
+
+    // current serverName is different than the broadcasted one
+    if (this->serverName != packetServer) {
+        this->serverName = packetServer;
+        this->getTable()->prepareNewServer();
+    }
+    // if the sender is the server itself
+    if (srcName == packetServer) {
+        this->getTable()->pathToServer.insert(packetServer);
+    } else {
+        // check if i should add to the path to the server by checking the difference in direct routers
+        // if it has at least 1 direct router
+        if (!this->isDirectConnection(packetServer)) {
+            // the sender router and its direct routers
+            routers.insert(srcName);
+            for (int i = 0; i < routersVec.size(); i++) {
+                    routers.insert(routersVec[i]);
+            }
+
+            // me and my direct routers
+            myRouters.insert(myName);
+            for (std::string router : (*myDirectRouters)) {
+                myRouters.insert(router);
+            }
+
+            // if mine contains all of the other then there is a loop so i dont need to add it to my pathToServer
+            std::set_difference(routers.begin(), routers.end(), myRouters.begin(),
+                                myRouters.end(), std::inserter(diff, diff.end()));
+
+            for (int i = 0; i < routersVec.size(); i++) {
+                if (routersVec[i] == packetServer) {
+                    directToServer = 1;
+                    break;
+                }
+            }
+
+            if (directToServer != 1) {
+                for (int i = 0; i < clientsVec.size(); i++) {
+                    if (clientsVec[i] == packetServer) {
+                        directToServer = 1;
+                        break;
+                    }
+                }
+            }
+
+            // if there is at least one that the other has that i dont
+            if (!diff.empty() || directToServer == 1) {
+                this->getTable()->pathToServer.insert(srcName);
+            }
+        }
+    }
+    this->announceServer(packetServer, srcName);
+}
+
+
+

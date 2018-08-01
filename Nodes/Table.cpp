@@ -19,20 +19,11 @@ std::vector<std::string>* Table::getDirectRouters() {
 }
 
 std::set<std::string>* Table::getPathToServer() {
-    int min = 10000;
-    std::set<std::string>* minPath;
-    for (auto element: this->pathToServer){
-        std::cout << min << std::endl;
-        for (auto elementito : element){
-            std::cout << elementito << std::endl;
-        }
-
-        if (element.size() < min){
-            min = element.size();
-            minPath = &element;
-        }
+    if (this->serverHops[0] < this->serverHops[1]){
+        return &this->pathToServer[0];
+    } else {
+        return &this->pathToServer[1];
     }
-    return minPath;
 }
 
 void Table::addDirectClient(std::string name) {

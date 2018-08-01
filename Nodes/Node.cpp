@@ -475,6 +475,7 @@ int Node::isDirectConnection(std::string name) {
 
 
 void Node::processServerMessage(const unsigned char* packet) {
+    int hops;
     std::vector<std::string> routersVec, clientsVec, serverRoutersClients, messageHops;
     // routers from packet and my routers
     std::set<std::string> routers, myRouters, diff;
@@ -484,6 +485,7 @@ void Node::processServerMessage(const unsigned char* packet) {
     packetMessage = this->getMessage(packet);
     splitString(packetMessage, messageHops, '$');
     std::cout << messageHops[1] << std::endl;
+    int newHops = std::stoi(messageHops[1]);
 
     //std::cout << "separating all" << std::endl;
     splitString(messageHops[0], serverRoutersClients, '-');
@@ -508,19 +510,29 @@ void Node::processServerMessage(const unsigned char* packet) {
         }
     }
 
-    std::cout << found << std::endl;
+    int tie = 0;
+    int less = 0;
 
-    if (!found){
+    if (!found) {
         this->serverName.push_back(packetServer);
+        this->getTable()->serverHops.push_back(newHops);
         this->getTable()->prepareNewServer();
+    } else {
+        if (this->getTable()->serverHops[j] < newHops){
+            less = 1;
+        } else if (this->getTable()->serverHops[j] == newHops) {
+            tie = 1 ;
+        }
     }
 
     // if the sender is the server itself
     if (srcName == packetServer) {
         if (!found) {
             this->getTable()->pathToServer.push_back({packetServer});
+            this->getTable()->serverHops.push_back(1);
         } else {
             this->getTable()->pathToServer[j].insert(packetServer);
+            this->getTable()->serverHops[j] = 1;
         }
     } else {
         // check if i should add to the path to the server by checking the difference in direct routers
@@ -563,11 +575,20 @@ void Node::processServerMessage(const unsigned char* packet) {
                 if (!found) {
                     if (this->getTable()->pathToServer.size() == 0) {
                         this->getTable()->pathToServer.push_back({srcName});
+                        this->getTable()->serverHops.push_back(newHops);
                     } else {
                         this->getTable()->pathToServer.back().insert(srcName);
+                        this->getTable()->serverHops.push_back(newHops);
                     }
                 } else {
-                    this->getTable()->pathToServer[j].insert(srcName);
+                    if (tie) {
+                        this->getTable()->pathToServer[j].insert(srcName);
+                    } else if (less) {
+                        this->getTable()->pathToServer[j].clear();
+                        this->getTable()->pathToServer[j].insert(srcName);
+                        this->getTable()->serverHops[j] = newHops;
+                    }
+
                 }
             }
         }

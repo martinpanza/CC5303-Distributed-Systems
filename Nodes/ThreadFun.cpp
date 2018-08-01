@@ -564,7 +564,7 @@ void tServerTh(T* n){
                     std::cout << "ignoring MIGRATE message" << std::endl;
                 } else if (n->getType(packet) == NEW_SRV_MESSAGE) {
                     std::cout << "NEW SERVER MESSAGE" << std::endl;
-                    n->processServerMessage(packet);
+                    //n->processServerMessage(packet);
                 }
 
 

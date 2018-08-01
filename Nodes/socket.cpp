@@ -49,7 +49,7 @@ int serverSocket(int port)
         perror("listen");
         exit(EXIT_FAILURE);
     }
-    std::cout << "waiting for connection" << std::endl;
+    std::cout << "Waiting for connection" << std::endl;
     return server_fd;
 }
 

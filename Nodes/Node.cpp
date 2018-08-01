@@ -29,8 +29,8 @@ int Node::run() {
 int Node::sendMessage(const std::string ip_src, const std::string port_src,
                       const std::string ip_dest, const std::string port_dest,
                       const int type, const std::string message, const int sd, int sequenceNumber, int serverBit) {
-    std::cout << ip_src << ":" << port_src << std::endl;
-    std::cout << ip_dest << ":" << port_dest << " " << type << " " << message;
+    //std::cout << ip_src << ":" << port_src << std::endl;
+    //std::cout << ip_dest << ":" << port_dest << " " << type << " " << message;
     return 0;
 }
 
@@ -289,7 +289,7 @@ unsigned char* Node::makePacket(std::string ip_src, std::string port_src, std::s
 
 std::string Node::searchPathToServer() {
     std::string usefulRouter;
-    std::cout << "getting path to server" << std::endl;
+    //std::cout << "getting path to server" << std::endl;
     std::set<std::string>* pathToServer = this->getTable()->getPathToServer();
 
     auto pathIterator = pathToServer->begin();
@@ -400,7 +400,7 @@ void Node::announceServer(std::string message, std::string initialSender) {
     std::set<std::string> routerSet, clientSet, clientDiff, diff;
     message += "-";
     //message += ";";
-    std::cout << "getting routers" << std::endl;
+    //std::cout << "getting routers" << std::endl;
     if (directRouters->size() > 0) {
         for (int i = 0; i < directRouters->size() - 1; i++) {
             message += (*directRouters)[i];
@@ -413,7 +413,7 @@ void Node::announceServer(std::string message, std::string initialSender) {
 
     message += "-";
 
-    std::cout << "getting clients" << std::endl;
+    //std::cout << "getting clients" << std::endl;
     if (directClients->size() > 0) {
         for (int i = 0; i < directClients->size() - 1; i++) {
             message += (*directClients)[i];
@@ -425,9 +425,9 @@ void Node::announceServer(std::string message, std::string initialSender) {
     }
     // dont want to send the message twice to a node
     std::set_difference(routerSet.begin(), routerSet.end(), this->getTable()->noticedNodes.begin(), this->getTable()->noticedNodes.end(), std::inserter(diff, diff.end()));
-    std::cout << "senting to unnoticed ones" << std::endl;
+    //std::cout << "senting to unnoticed ones" << std::endl;
     for (std::string router : diff) {
-        std::cout << "unnoticed router: " << router << std::endl;
+        //std::cout << "unnoticed router: " << router << std::endl;
         if (router != initialSender) {
             splitString(router, ipport, ':');
             this->sendMessage(this->ip, std::to_string(this->port), ipport[0], ipport[1], NEW_SRV_MESSAGE, message,
@@ -440,7 +440,7 @@ void Node::announceServer(std::string message, std::string initialSender) {
     std::set_difference(clientSet.begin(), clientSet.end(), this->getTable()->noticedClients.begin(), this->getTable()->noticedClients.end(), std::inserter(clientDiff, clientDiff.end()));
 
     for (std::string client : clientDiff) {
-        std::cout << "unnoticed client: " << client << std::endl;
+        //std::cout << "unnoticed client: " << client << std::endl;
         splitString(client, ipport, ':');
         this->sendMessage(this->ip, std::to_string(this->port), ipport[0], ipport[1], NEW_SRV_MESSAGE, message, this->getSocketDescriptor(client), 0, 1);
         this->getTable()->addNoticedClients(client);
@@ -489,8 +489,8 @@ void Node::processServerMessage(const unsigned char* packet) {
 
     srcName = this->getSrcIp(packet) + ":" + std::to_string(this->getSrcPort(packet));
     myName = this->ip + ":" + std::to_string((this->port));
-    std::cout << "process server message from: " << srcName << std::endl;
-    std::cout << "server: " << packetServer << std::endl;
+    //std::cout << "process server message from: " << srcName << std::endl;
+    //std::cout << "server: " << packetServer << std::endl;
 
     int j = 0;
     int found = 0;
@@ -501,7 +501,7 @@ void Node::processServerMessage(const unsigned char* packet) {
         }
     }
 
-    std::cout << found << std::endl;
+    //std::cout << found << std::endl;
 
     if (!found){
         this->serverName.push_back(packetServer);

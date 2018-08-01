@@ -107,7 +107,7 @@ public:
 
     int allMessageArrived(std::vector<unsigned char *> fragments);
 
-    void announceServer(std::string message, std::string initialSender);
+    void announceServer(std::string message, std::string initialSender, int hop);
     void processServerMessage(const unsigned char* packet);
     int isDirectConnection(std::string name);
 

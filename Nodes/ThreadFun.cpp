@@ -127,7 +127,7 @@ void sendTh(T *n) {
                             }
                         } else {
                             n->getTable()->prepareNewServer();
-                            n->announceServer(n->ip + ":" + std::to_string(n->port), "");
+                            n->announceServer(n->ip + ":" + std::to_string(n->port), "", 0);
                         }
                     } else {
                         //std::cout << "it is not empty" << std::endl;
@@ -174,7 +174,7 @@ void sendTh(T *n) {
                                                 n->fragmentedPackets[i].second);
                                         if (result.first) {
                                             n->iAmAServer = 1;
-                                            n->announceServer(n->ip + ":" + std::to_string(n->port), "");
+                                            n->announceServer(n->ip + ":" + std::to_string(n->port), "", 0);
                                             std::thread server(tServerTh, n);
                                             server.detach();
                                             n->fragmentedPackets.erase(n->fragmentedPackets.begin() + i);
@@ -193,7 +193,7 @@ void sendTh(T *n) {
                             } else {
                                 processMigrateMessage(n, n->getMessage(packet));
 
-                                n->announceServer(n->ip + ":" + std::to_string(n->port), "");
+                                n->announceServer(n->ip + ":" + std::to_string(n->port), "", 0);
                                 n->iAmAServer = 1;
                                 std::thread server(tServerTh, n);
                                 server.detach();
@@ -562,6 +562,7 @@ void tServerTh(T* n){
                    // std::cout << "ignoring MIGRATE message" << std::endl;
                 } else if (n->getType(packet) == NEW_SRV_MESSAGE) {
                    // std::cout << "ignoring NEW_SRV message" << std::endl;
+                    //n->processServerMessage(packet);
                 }
 
                 else {

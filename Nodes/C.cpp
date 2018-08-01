@@ -107,7 +107,7 @@ int C::run() {
             this->serverCond.wait(lk);
             lk.unlock();
             std::cout << "announcing server" << std::endl;
-            this->announceServer(this->ip + ":" + std::to_string(this->port), "");
+            this->announceServer(this->ip + ":" + std::to_string(this->port), "", 0);
 
             std::thread server (cServerTh, this);
             server.detach();

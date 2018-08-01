@@ -393,7 +393,7 @@ std::pair<int, std::string> Node::checkFragmentArrival(std::vector<unsigned char
 };
 // message is the serverName
 // format of message will be serverName-router_1;router_2;...;router_n-client_1;client_2
-void Node::announceServer(std::string message, std::string initialSender) {
+void Node::announceServer(std::string message, std::string initialSender, int hop) {
     std::vector<std::string>* directRouters =(this->getTable())->getDirectRouters();
     std::vector<std::string>* directClients =(this->getTable())->getDirectClients();
     std::vector<std::string> ipport;
@@ -423,6 +423,10 @@ void Node::announceServer(std::string message, std::string initialSender) {
         message += (*directClients)[directClients->size() - 1];
         clientSet.insert((*directClients)[directClients->size() - 1]);
     }
+
+    message += "$";
+    message += std::to_string(hop);
+
     // dont want to send the message twice to a node
     std::set_difference(routerSet.begin(), routerSet.end(), this->getTable()->noticedNodes.begin(), this->getTable()->noticedNodes.end(), std::inserter(diff, diff.end()));
     std::cout << "senting to unnoticed ones" << std::endl;
@@ -471,15 +475,18 @@ int Node::isDirectConnection(std::string name) {
 
 
 void Node::processServerMessage(const unsigned char* packet) {
-    std::vector<std::string> routersVec, clientsVec, serverRoutersClients;
+    std::vector<std::string> routersVec, clientsVec, serverRoutersClients, messageHops;
     // routers from packet and my routers
     std::set<std::string> routers, myRouters, diff;
     std::string packetServer, srcName, myName, packetMessage;
     std::vector<std::string>* myDirectRouters =(this->getTable())->getDirectRouters();
     int directToServer = 0;
     packetMessage = this->getMessage(packet);
+    splitString(packetMessage, messageHops, '$');
+    std::cout << messageHops[1] << std::endl;
+
     //std::cout << "separating all" << std::endl;
-    splitString(packetMessage, serverRoutersClients, '-');
+    splitString(messageHops[0], serverRoutersClients, '-');
     //std::cout << "separating routers" << std::endl;
     splitString(serverRoutersClients[1], routersVec, ';');
     //std::cout << "separating clients" << std::endl;
@@ -565,7 +572,7 @@ void Node::processServerMessage(const unsigned char* packet) {
             }
         }
     }
-    this->announceServer(packetServer, srcName);
+    this->announceServer(packetServer, srcName, std::stoi(messageHops[1]) + 1);
 }
 
 

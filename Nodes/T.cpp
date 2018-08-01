@@ -82,7 +82,7 @@ int T::run() {
             this->serverCond.wait(lk);
             lk.unlock();
             this->getTable()->prepareNewServer();
-            this->announceServer(this->ip + ":" + std::to_string(this->port), "");
+            this->announceServer(this->ip + ":" + std::to_string(this->port), "", 0);
 
             std::thread server (tServerTh, this);
             server.detach();

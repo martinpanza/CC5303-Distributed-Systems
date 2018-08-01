@@ -568,11 +568,10 @@ void tServerTh(T* n){
 
 
                 else {
-                    if (!alreadyProcessed) {
-                        int found = 0;
-                        for (int i = 0; i < n->serverWaitingForAcks.size(); i++) {
-                            if (nameDest == n->serverWaitingForAcks[i].first &&
-                                nameSrc == n->serverWaitingForAcks[i].second) {
+                    int found = 0;
+                    for (int i = 0; i < n->serverWaitingForAcks.size(); i++) {
+                        if (nameDest == n->serverWaitingForAcks[i].first &&
+                            nameSrc == n->serverWaitingForAcks[i].second) {
                                 std::cout << "Paso ACK de " << nameSrc << " para " << nameDest << std::endl;
                                 n->serverWaitingForAcks.erase(n->serverWaitingForAcks.begin() + i);
 
@@ -598,17 +597,16 @@ void tServerTh(T* n){
                                 found = 1;
 
                                 break;
-                            }
                         }
+                    }
 
-                        if (!found) {
-                            //send it anyway
-                            usefulRouter = n->searchConnectedRouter(nameDest);
-                            sd = n->getSocketDescriptor(usefulRouter);
+                    if (!found) {
+                        //send it anyway
+                        usefulRouter = n->searchConnectedRouter(nameDest);
+                        sd = n->getSocketDescriptor(usefulRouter);
 
-                            sleep(n->getDelay(usefulRouter));
-                            send(sd, packet, (size_t) n->getTotalLength(packet), 0);
-                        }
+                        sleep(n->getDelay(usefulRouter));
+                        send(sd, packet, (size_t) n->getTotalLength(packet), 0);
                     } else {
                         sendOneFragmentedMessage(n, packet, nameDest);
                     }

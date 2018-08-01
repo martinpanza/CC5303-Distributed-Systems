@@ -49,8 +49,6 @@ void receiveTh(Node *n, int sd){
 
         auto * to = (char *)malloc(valread * sizeof(char));
         copyBuffer(buffer, &to, valread);
-        std::cout << "Received packet: " << valread << std::endl;
-
         if (valread == 0){
             std::string name = n->getNameBySocketDescriptor(sd);
             n->getTable()->direct_clients.erase(std::remove(n->getTable()->direct_clients.begin(),
@@ -73,7 +71,6 @@ void sendTh(T *n) {
     while (1) {
         if (n->iAmAServer){
             n->serverCond.notify_one();
-            std::cout << "See ya soon!" << std::endl;
             return;
         } else {
             (n->mtx).lock();
@@ -108,14 +105,10 @@ void sendTh(T *n) {
                 if (n->getType(packet) == TABLE_MESSAGE) {
                     n->processTablePacket(packet);
                 } else if (n->getType(packet) == NEW_SRV_MESSAGE) {
-                    std::cout << "NEW SERVER MESSAGE" << std::endl;
                     n->processServerMessage(packet);
                 } else if (n->getType(packet) == MIGRATE_MESSAGE) {
-                    std::cout << "NEW MIGRATE MESSAGE Dest: " << nameDest << " myName: " << n->ip + ":" + std::to_string(n->port) << std::endl;
                     if (n->getMessage(packet) == "") {
-                        std::cout << "it is empty" << std::endl;
                         if (nameDest != n->ip + ":" + std::to_string(n->port)){
-                            std::cout << "for me" << std::endl;
                             unsigned char * packet = n->makePacket(n->ip, std::to_string(n->port), ip_dest, port_dest, MIGRATE_MESSAGE, "", 0, 0);
                             for (auto element: n->getTable()->direct_routers){
                                 if (element == nameSrc){
@@ -130,9 +123,7 @@ void sendTh(T *n) {
                             n->announceServer(n->ip + ":" + std::to_string(n->port), "");
                         }
                     } else {
-                        std::cout << "it is not empty" << std::endl;
                         if (nameDest != n->ip + ":" + std::to_string(n->port)) {
-                            std::cout << "not for me" << std::endl;
                             int isAClient = 0;
                             std::vector<std::string> ipport;
                             auto* reachableClients = n->getTable()->getReachableClients();
@@ -140,7 +131,6 @@ void sendTh(T *n) {
                             for (int i = 0; i < directClients->size(); i++) {
                                 if ((*directClients)[i] == nameDest) {
                                     isAClient = 1;
-                                    std::cout << "it is for a direct client!" << std::endl;
                                     splitString((*directClients)[i], ipport, ':');
                                     break;
                                 }
@@ -148,7 +138,6 @@ void sendTh(T *n) {
                             for (int i = 0; i < reachableClients->size(); i++) {
                                 if ((*reachableClients)[i].first == nameDest) {
                                     isAClient = 1;
-                                    std::cout << "it is for a client!" << std::endl;
                                     splitString((*reachableClients)[i].first, ipport, ':');
                                     break;
                                 }
@@ -158,7 +147,6 @@ void sendTh(T *n) {
                                 n->setServerBit(packet, 1);
                                 sendOneFragmentedMessage(n, packet, ipport[0] + ":" + ipport[1]);
                             } else {
-                                std::cout << "for router" << std::endl;
                                 // Message is for a router, i have the path in my table
                                 n->setServerBit(packet, 0);
                                 sendOneFragmentedMessage(n, packet, nameDest);
@@ -295,7 +283,6 @@ void cProcessTh(C *c) {
     while (1){
         if (c->iAmAServer){
             c->serverCond.notify_one();
-            std::cout << "Goodbye Everubody!" << std::endl;
             return;
         } else {
 
@@ -355,7 +342,6 @@ void cServerTh(C *c){
     while (1){
         if (!c->iAmAServer){
             c->serverCond.notify_one();
-            std::cout << "Felt good while being a server" << std::endl;
             return;
         } else {
 
@@ -417,7 +403,6 @@ void tServerTh(T* n){
     while (1) {
         if (!n->iAmAServer){
             n->serverCond.notify_one();
-            std::cout << "Felt good while being a server" << std::endl;
             return;
         } else {
             (n->mtx).lock();
@@ -466,11 +451,8 @@ void tServerTh(T* n){
                             for (int i = 0; i < n->serverFragmentedPackets.size(); i++) {
                                 if (nameSrc == n->serverFragmentedPackets[i].first.first &&
                                     nameDest == n->serverFragmentedPackets[i].first.second) {
-                                    std::cout << "Frag: " << n->getMessage(packet) << std::endl;
-                                    std::cout << "Expecting " << n->serverFragmentedPackets[i].second.first << std::endl;
 
                                     if (n->getSeqNum(packet) == n->serverFragmentedPackets[i].second.first) {
-                                        std::cout << "Good seqNUm " << n->getSeqNum(packet) << std::endl;
 
                                         n->serverFragmentedPackets[i].second.second.push_back(packet);
 
@@ -489,7 +471,6 @@ void tServerTh(T* n){
                                             n->sendMessage(n->ip, std::to_string(n->port), ipSrc, portSrc, SACK_MESSAGE,
                                                            std::string(""), sd, n->getSeqNum(packet), n->getServerBit(packet));
 
-                                            std::cout << "Envie SACK a " << nameSrc << std::endl;
 
                                             packet = n->makePacket(std::move(ipSrc), std::move(portSrc),
                                                                    std::move(ipDest),
@@ -498,7 +479,6 @@ void tServerTh(T* n){
 
                                             sendFragmentedMessages(n, nameDest, packet);
 
-                                            std::cout << "Envie mensaje a " << nameDest << std::endl;
 
                                             n->serverFragmentedPackets.erase(n->serverFragmentedPackets.begin() + i);
 
@@ -506,7 +486,7 @@ void tServerTh(T* n){
                                         }
 
                                     } else {
-                                        std::cout << "Wrong seqNUm " << n->getSeqNum(packet) << std::endl;
+                                        //std::cout << "Wrong seqNUm " << n->getSeqNum(packet) << std::endl;
                                     }
 
                                     found = 1;
@@ -532,11 +512,9 @@ void tServerTh(T* n){
                             n->sendMessage(n->ip, std::to_string(n->port), ipSrc, portSrc, SACK_MESSAGE,
                                            std::string(""), sd, n->getSeqNum(packet), n->getServerBit(packet));
 
-                            std::cout << "Envie SACK a " << nameSrc << std::endl;
 
                             sendFragmentedMessages(n, nameDest, packet);
 
-                            std::cout << "Envie mensaje a " << nameDest << std::endl;
 
                             n->serverWaitingForAcks.push_back({nameSrc, nameDest});
                         }
@@ -551,9 +529,7 @@ void tServerTh(T* n){
                     send(sd, packet, (size_t) n->getTotalLength(packet), 0);
 
                 } else if (n->getType(packet) == MIGRATE_MESSAGE) {
-                    std::cout << "ignoring MIGRATE message" << std::endl;
                 } else if (n->getType(packet) == NEW_SRV_MESSAGE) {
-                    std::cout << "ignoring NEW_SRV message" << std::endl;
                 }
 
 
@@ -573,7 +549,6 @@ void tServerTh(T* n){
                             n->sendMessage(n->ip, std::to_string(n->port), ipSrc, portSrc, SACK_MESSAGE,
                                            nameDest, sd, n->getSeqNum(packet), n->getServerBit(packet));
 
-                            std::cout << "Envie SACK a " << portSrc << std::endl;
 
                             //send message
                             usefulRouter = n->searchConnectedRouter(nameDest);
@@ -582,7 +557,6 @@ void tServerTh(T* n){
                             sleep(n->getDelay(usefulRouter));
                             send(sd, packet, (size_t) n->getTotalLength(packet), 0);
 
-                            std::cout << "Envie ACK a " << nameDest << std::endl;
 
                             found = 1;
 
@@ -612,7 +586,6 @@ void offServerTh(Node* n) {
     while (1) {
         if (!n->off) {
             n->serverCond.notify_one();
-            std::cout << "Not doing anything has a bright side" << std::endl;
             return;
         }
         sleep(3);
@@ -626,17 +599,14 @@ void tMigrateServerTh(T *n, std::string sIP, std::string sPort, std::string type
     unsigned char * packet;
     std::cout << "Migrating..." << std::endl;
     std::string m = "";
-    std::cout << "first for" << std::endl;
     for (auto element: n->serverFragmentedPackets){
         m += element.first.first + "," + element.first.second + ',';
         m += std::to_string(element.second.first) + ";";
     }
     m += "$";
-    std::cout << "second for" << std::endl;
     for (auto element: n->serverWaitingForAcks){
         m += element.first + "," + element.second + ';';
     }
-    std::cout << "make Packet" << std::endl;
 
     if (t) {
         packet = n->makePacket(n->ip, std::to_string(n->port), sIP, sPort, MIGRATE_MESSAGE, "", 0, 0);
@@ -647,10 +617,7 @@ void tMigrateServerTh(T *n, std::string sIP, std::string sPort, std::string type
     } else {
         packet = n->makePacket(n->ip, std::to_string(n->port), sIP, sPort, MIGRATE_MESSAGE, m, 0, 0);
 
-        std::cout << "sending messages..." << std::endl;
         sendFragmentedMessages(n, sIP + ":" + sPort, packet);
-        std::cout << "sent messages..." << std::endl;
-
 
         n->serverFragmentedPackets.clear();
         n->serverWaitingForAcks.clear();
@@ -659,7 +626,6 @@ void tMigrateServerTh(T *n, std::string sIP, std::string sPort, std::string type
     while (1) {
         if (!n->migrating) {
             n->serverCond.notify_one();
-            std::cout << "Not doing anything has a bright side" << std::endl;
             return;
         }
         (n->mtx).lock();
@@ -667,18 +633,14 @@ void tMigrateServerTh(T *n, std::string sIP, std::string sPort, std::string type
             packet = (n->message_queue).front();
             (n->message_queue).pop_front();
             (n->mtx).unlock();
-            std::cout << "checking..." << std::endl;
 
             if (n->getType(packet) == NEW_SRV_MESSAGE) {
-                std::cout << "NEW SERVER MESSAGE" << std::endl;
                 n->processServerMessage(packet);
 
                 if (t) {
                     packet = n->makePacket(n->ip, std::to_string(n->port), sIP, sPort, MIGRATE_MESSAGE, m, 0, 1);
 
-                    std::cout << "sending messages..." << std::endl;
                     sendThroughRouter(n, n->getTable()->getDirectRouters()->front(), packet);
-                    std::cout << "sent messages..." << std::endl;
 
 
                     n->serverFragmentedPackets.clear();
@@ -703,17 +665,14 @@ void cMigrateServerTh(C *n, std::string sIP, std::string sPort, std::string type
     unsigned char * packet;
     std::cout << "Migrating..." << std::endl;
     std::string m = "";
-    std::cout << "first for" << std::endl;
     for (auto element: n->serverFragmentedPackets){
         m += element.first.first + "," + element.first.second + ',';
         m += std::to_string(element.second.first) + ";";
     }
     m += "$";
-    std::cout << "second for" << std::endl;
     for (auto element: n->serverWaitingForAcks){
         m += element.first + "," + element.second + ';';
     }
-    std::cout << "make Packet" << std::endl;
 
     if (t) {
         packet = n->makePacket(n->ip, std::to_string(n->port), sIP, sPort, MIGRATE_MESSAGE, "", 0, 0);
@@ -721,9 +680,7 @@ void cMigrateServerTh(C *n, std::string sIP, std::string sPort, std::string type
     } else {
         packet = n->makePacket(n->ip, std::to_string(n->port), sIP, sPort, MIGRATE_MESSAGE, m, 0, 0);
 
-        std::cout << "sending messages..." << std::endl;
         n->sendPacket(packet);
-        std::cout << "sent messages..." << std::endl;
 
 
         n->serverFragmentedPackets.clear();
@@ -736,7 +693,6 @@ void cMigrateServerTh(C *n, std::string sIP, std::string sPort, std::string type
         while (1) {
             if (!n->migrating) {
                 n->serverCond.notify_one();
-                std::cout << "Finish migrating" << std::endl;
                 return;
             }
             (n->mtx).lock();
@@ -744,17 +700,13 @@ void cMigrateServerTh(C *n, std::string sIP, std::string sPort, std::string type
                 packet = (n->message_queue).front();
                 (n->message_queue).pop_front();
                 (n->mtx).unlock();
-                std::cout << "checking..." << std::endl;
 
                 if (n->getType(packet) == NEW_SRV_MESSAGE) {
-                    std::cout << "NEW SERVER MESSAGE" << std::endl;
                     //n->processServerMessage(packet);
 
                     packet = n->makePacket(n->ip, std::to_string(n->port), sIP, sPort, MIGRATE_MESSAGE, m, 0, 1);
 
-                    std::cout << "sending messages..." << std::endl;
                     n->sendPacket(packet);
-                    std::cout << "sent messages..." << std::endl;
 
                     n->serverFragmentedPackets.clear();
                     n->serverWaitingForAcks.clear();
@@ -774,7 +726,6 @@ void cMigrateServerTh(C *n, std::string sIP, std::string sPort, std::string type
     } else {
         n->migrating = 0;
         n->serverCond.notify_one();
-        std::cout << "Not doing anything has a bright side" << std::endl;
         return;
     }
 }

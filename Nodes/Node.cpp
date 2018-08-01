@@ -400,7 +400,6 @@ void Node::announceServer(std::string message, std::string initialSender) {
     std::set<std::string> routerSet, clientSet, clientDiff, diff;
     message += "-";
     //message += ";";
-    std::cout << "getting routers" << std::endl;
     if (directRouters->size() > 0) {
         for (int i = 0; i < directRouters->size() - 1; i++) {
             message += (*directRouters)[i];
@@ -413,7 +412,6 @@ void Node::announceServer(std::string message, std::string initialSender) {
 
     message += "-";
 
-    std::cout << "getting clients" << std::endl;
     if (directClients->size() > 0) {
         for (int i = 0; i < directClients->size() - 1; i++) {
             message += (*directClients)[i];
@@ -425,9 +423,7 @@ void Node::announceServer(std::string message, std::string initialSender) {
     }
     // dont want to send the message twice to a node
     std::set_difference(routerSet.begin(), routerSet.end(), this->getTable()->noticedNodes.begin(), this->getTable()->noticedNodes.end(), std::inserter(diff, diff.end()));
-    std::cout << "senting to unnoticed ones" << std::endl;
     for (std::string router : diff) {
-        std::cout << "unnoticed router: " << router << std::endl;
         if (router != initialSender) {
             splitString(router, ipport, ':');
             this->sendMessage(this->ip, std::to_string(this->port), ipport[0], ipport[1], NEW_SRV_MESSAGE, message,
@@ -440,7 +436,6 @@ void Node::announceServer(std::string message, std::string initialSender) {
     std::set_difference(clientSet.begin(), clientSet.end(), this->getTable()->noticedClients.begin(), this->getTable()->noticedClients.end(), std::inserter(clientDiff, clientDiff.end()));
 
     for (std::string client : clientDiff) {
-        std::cout << "unnoticed client: " << client << std::endl;
         splitString(client, ipport, ':');
         this->sendMessage(this->ip, std::to_string(this->port), ipport[0], ipport[1], NEW_SRV_MESSAGE, message, this->getSocketDescriptor(client), 0, 1);
         this->getTable()->addNoticedClients(client);

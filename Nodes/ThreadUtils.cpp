@@ -24,12 +24,10 @@ void sendOneFragmentedMessage(T *n, unsigned char *packet, std::string name) {
     int type = n->getType(packet);
     std::string usefulRouter;
     if ((type == ACK_MESSAGE || type == CHAT_MESSAGE || type == MIGRATE_MESSAGE) && !n->getServerBit(packet)) {
-        std::cout << "buscar path" << std::endl;
         usefulRouter = n->searchPathToServer();
         sd = n->getSocketDescriptor(usefulRouter);
 
     } else {
-        std::cout << "no buscar path" << std::endl;
         usefulRouter = n->searchConnectedRouter(name);
         sd = n->getSocketDescriptor(usefulRouter);
     }
@@ -151,7 +149,6 @@ void cServer(C* c, unsigned char* packet, std::string nameSrc, std::string nameD
 
         if (!found){
             //send it anyway
-            std::cout << "unknown ACK, letting it pass anyway" << std::endl;
             sleep(c->connections.front().second.first);
             send(c->getSocketDescriptor(c->getTable()->direct_routers.front()), packet, (size_t) c->getTotalLength(packet), 0);
         }
@@ -177,7 +174,7 @@ void cClient(C* c, unsigned char* packet, std::string nameSrc, std::string ipSrc
                     std::pair<int, std::string> result = c->checkFragmentArrival(
                             c->fragmentedPackets[i].second);
                     if (result.first) {
-                        std::cout << "Llego mensaje de " << nameSrc << "->" << result.second << std::endl;
+                        std::cout << "Llego mensaje de " << nameSrc << "-> " << result.second << std::endl;
                         sleep((unsigned int) c->connections.front().second.first);
 
                         c->sendMessage(c->ip, std::to_string(c->port), ipSrc, portSrc, ACK_MESSAGE,
@@ -199,7 +196,7 @@ void cClient(C* c, unsigned char* packet, std::string nameSrc, std::string ipSrc
                 c->fragmentedPackets.push_back(newFragmentedPacket);
             }
         } else {
-            std::cout << "Llego mensaje de " << nameSrc << "->" << c->getMessage(packet) << std::endl;
+            std::cout << "Llego mensaje de " << nameSrc << "-> " << c->getMessage(packet) << std::endl;
             sleep((unsigned int) c->connections.front().second.first);
             c->sendMessage(c->ip, std::to_string(c->port), ipSrc, portSrc, ACK_MESSAGE, std::string(""),
                            c->getSocketDescriptor(c->getTable()->direct_routers.front()), c->getSeqNum(packet),
@@ -213,7 +210,7 @@ void cClient(C* c, unsigned char* packet, std::string nameSrc, std::string ipSrc
         } else {
             for (int i = 0; i < c->sentAcks.size(); i++) {
                 if (c->getMessage(packet) == c->sentAcks[i].first) {
-                    std::cout << "Su ACK para " << c->getMessage(packet) << "ha llegado al servidor" << std::endl;
+                    std::cout << "Su ACK para " << c->getMessage(packet) << " ha llegado al servidor" << std::endl;
                     c->sentAcks.erase(c->sentAcks.begin() + i);
                 }
             }
@@ -238,7 +235,6 @@ void cClient(C* c, unsigned char* packet, std::string nameSrc, std::string ipSrc
         c->cond.notify_one();
 
     } else if (c->getType(packet) == NEW_SRV_MESSAGE) {
-        std::cout << "NEW_SRV_MESSAGE received" << std::endl;
     } else if (c->getType(packet) == MIGRATE_MESSAGE) {
         if (c->getFragmentBit(packet)) {
             int found = 0;
@@ -249,7 +245,6 @@ void cClient(C* c, unsigned char* packet, std::string nameSrc, std::string ipSrc
                     std::pair<int, std::string> result = c->checkFragmentArrival(
                             c->fragmentedPackets[i].second);
                     if (result.first) {
-                        std::cout << "Llego mensaje de migracion: " << result.second << std::endl;
                         std::string m = result.second;
                         processMigrateMessage(c, m);
 
@@ -273,7 +268,6 @@ void cClient(C* c, unsigned char* packet, std::string nameSrc, std::string ipSrc
                 c->fragmentedPackets.push_back(newFragmentedPacket);
             }
         } else {
-            std::cout << "Llego mensaje de migracion: " << c->getMessage(packet) << std::endl;
             processMigrateMessage(c, c->getMessage(packet));
             c->getTable()->prepareNewServer();
             c->announceServer(c->ip + ":" + std::to_string(c->port), "");
@@ -379,11 +373,8 @@ void cSendResendMessages(std::vector<std::string> resend, C* c){
 
 void increaseExpectedSeqNumber(Node *n) {
     for (int i = 0; i < n->serverFragmentedPackets.size(); i++){
-        std::cout << "Before expecting seqNUm " << n->serverFragmentedPackets[i].second.first << std::endl;
         n->serverFragmentedPackets[i].second.first = (n->serverFragmentedPackets[i].second.first + 1) %  MAX_SEQ_NUMBER;
-        std::cout << "Now expecting seqNUm " << n->serverFragmentedPackets[i].second.first << std::endl;
         n->serverFragmentedPackets[i].second.second.clear();
-        std::cout << "Size: " << n->serverFragmentedPackets[i].second.second.size() << std::endl;
 
     }
 }
@@ -396,9 +387,7 @@ void processMigrateMessage(Node *n, std::string m) {
         return;
     }
     splitString(m, server_vectors, '$');
-    std::cout << "first split" << std::endl;
     splitString(server_vectors[0], serverFragmentedPackets, ';');
-    std::cout << "first for " << server_vectors[0] << std::endl;
     for (auto fragmented: serverFragmentedPackets){
         if (fragmented == ""){
             continue;
@@ -406,19 +395,15 @@ void processMigrateMessage(Node *n, std::string m) {
         std::vector<std::string> row;
         std::vector<unsigned char*> v;
         splitString(fragmented, row, ',');
-        std::cout << row[0] << " " << row[1] << " " << row[2] << std::endl;
         n->serverFragmentedPackets.push_back({{row[0], row[1]}, {stoi(row[2]), v}});
     }
-    std::cout << "second split" << std::endl;
     splitString(server_vectors[1], serverWaitingForACKS, ';');
-    std::cout << "second for" << std::endl;
     for (auto acks: serverWaitingForACKS){
         if (acks == ""){
             continue;
         }
         std::vector<std::string> row;
         splitString(acks, row, ',');
-        std::cout << row[0] << " " << row[1] << std::endl;
         n->serverWaitingForAcks.push_back({row[0], row[1]});
     }
 }
